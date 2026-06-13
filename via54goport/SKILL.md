@@ -1,10 +1,13 @@
 ---
 name: via54goport
 description: Use when evaluating whether to rewrite a Python daemon or service in Go (or when actually doing the rewrite). Covers the "should I rewrite?" decision matrix, feasibility checks (SDK availability, LOC, IPC model), skeleton scaffolding with larksuite/oapi-sdk-go or similar Go SDKs, file-IPC compatibility with existing Python consumers, and parallel dual-runtime migration strategies.
-version: 1.0.0
-author: veawho
 license: MIT
+compatibility: Designed for Claude Code, Hermes Agent, OpenClaw, OpenCode, Codex CLI. macOS / Linux / Windows. Requires Go 1.21+, gh CLI, and Python 3.11+ for the pre-rewrite inventory.
 metadata:
+  author: veawho
+  version: 1.0.0
+  audience: developers
+  tags: go python rewrite port migration services lark feishu
   hermes:
     tags: [go, python, rewrite, port, migration, services, lark, feishu]
     related_skills: [via54merge, hermes-agent-skill-authoring, plan]
@@ -12,9 +15,13 @@ metadata:
 
 # via54goport — Evaluate & Rewrite Python Services in Go
 
+> **中文摘要** (Chinese Summary): 本技能用于判断是否要把 Python daemon / service 改写成 Go(或真做改写)。覆盖"该不该改写"的决策矩阵、可行性检查(SDK 可用性、LOC、IPC 模型)、用 larksuite/oapi-sdk-go 等 Go SDK 搭 skeleton、与现有 Python consumer 的 file-IPC 字节兼容、以及双 runtime 并行迁移策略。
+
 ## Overview
 
 The Go rewrite question comes up whenever Python startup latency, venv weight, or daemon count is annoying. The honest answer is usually "no, don't rewrite" — but for a small class of services (WS long connections, file-system IPC, simple subprocess orchestration) Go is genuinely cheaper to operate. This skill teaches you to **distinguish the two cases honestly**, and when the answer is "yes", gives you the skeleton + verification path that won't blow up the existing Python consumers downstream.
+
+> **中文注释**: 改写问题的诚实回答通常是"不要改"。但对一小类服务(WS 长连接、文件系统 IPC、简单 subprocess 编排),Go 真的更省运维。本技能教你怎么诚实区分两类情况。
 
 ## When to Use
 
@@ -33,6 +40,8 @@ The Go rewrite question comes up whenever Python startup latency, venv weight, o
 ## Decision Matrix
 
 Before writing any Go, score these:
+
+> **中文注释**: 决策矩阵。≥9 强烈改写,6-8 改一个保留其他,≤5 改 Python 而不是改 Go。
 
 | Criterion | 0 (don't rewrite) | 1 (possible) | 2 (definitely) |
 |---|---|---|---|
@@ -59,6 +68,8 @@ grep -E "^(import|from) " /path/to/service.py | grep -vE "^(import|from) (os|sys
 gh search repos larksuite/oapi-sdk-go --limit 3
 # Look for: official org, recent commits (within 6 months), >100 stars, MIT/Apache license
 ```
+
+> **铁律 (Iron Rule)**: 除非 SDK 存在 **且** 来自与 Python 同一个组织(或官方背书的 mirror),不要开始改写。社区移植滞后 6-12 个月,会漏 edge case。
 
 **Iron rule**: never start a Go rewrite unless the SDK exists **and** is from the same org as the Python one (or an officially blessed mirror). Community ports lag by 6-12 months and miss edge cases.
 
@@ -122,6 +133,8 @@ go get github.com/larksuite/oapi-sdk-go/v3/ws@latest
 go get github.com/gorilla/websocket@v1.5.0
 go get github.com/gogo/protobuf@v1.3.2
 ```
+
+> **中文注释**: `go mod tidy` 在网络受限环境会卡住或失败。如果失败,手动 `go get` 子包+ transitive deps。
 
 ### Step 3 — Write the skeleton
 
@@ -234,6 +247,8 @@ Don't flip the switch on day 1. Run both side by side:
 
 If at any step the downstream consumer (e.g. `inbox_watcher`) breaks, **roll back to Python** — don't try to debug the Go skeleton in production.
 
+> **中文注释**: 双 runtime 并行 1-2 周,出问题随时回滚 Python。**不要在生产环境 debug Go skeleton**。
+
 ## Common Pitfalls
 
 1. **SDK field naming differences**. Go SDK often uses `MessageId` not `MessageID`, `ChatId` not `ChatID`. Copy the exact field names from the SDK source — don't guess.
@@ -303,7 +318,7 @@ cat /tmp/hermes_inbox/<msg_id>.json
 pkill -f daemon.py
 
 # Now write equivalent in Go, run for 5s, trigger, read, diff
-diff <(python -c "import json,sys; print(json.dumps(json.load(open(sys.argv[1)), indent=2, sort_keys=True))" /tmp/hermes_inbox/py_msg.json) \
+diff <(python -c "import json,sys; print(json.dumps(json.load(open(sys.argv[1]), indent=2, sort_keys=True))" /tmp/hermes_inbox/py_msg.json) \
      <(python -c "import json,sys; print(json.dumps(json.load(open(sys.argv[1])), indent=2, sort_keys=True))" /tmp/hermes_inbox/go_msg.json)
 ```
 

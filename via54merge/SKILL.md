@@ -1,10 +1,13 @@
 ---
 name: via54merge
 description: Use when consolidating duplicated Python venvs, redundant Python service daemons, or overlapping native binaries on macOS / Linux dev machines. Covers the decision matrix (merge vs isolate vs Go-rewrite), the uv pip install workflow to bridge two venvs, shell wrapper shebang rewrites, launchd plist / systemd unit reconciliation, and post-merge verification (md5, ps, lsof, curl).
-version: 1.0.0
-author: veawho
 license: MIT
+compatibility: Designed for Claude Code, Hermes Agent, OpenClaw, OpenCode, Codex CLI. macOS / Linux. Requires bash, uv, and either launchd (macOS) or systemd (Linux).
 metadata:
+  author: veawho
+  version: 1.0.0
+  audience: developers
+  tags: python venv consolidation services launchd macos devops
   hermes:
     tags: [python, venv, consolidation, services, launchd, macos, devops]
     related_skills: [via54goport, hermes-agent-skill-authoring, plan]
@@ -12,9 +15,13 @@ metadata:
 
 # via54merge — Consolidate Duplicated Python Runtimes, Services & Binaries
 
+> **中文摘要** (Chinese Summary): 本技能用于在 macOS / Linux 开发机上合并重复的 Python venv、冗余的 service daemon,以及重叠的原生二进制。覆盖决策矩阵、uv pip install 桥接流程、wrapper shebang 重写、launchd / systemd 单元协调,以及合并后的验证(md5 / ps / lsof / curl)。
+
 ## Overview
 
 When you have multiple Python venvs serving overlapping purposes, several LaunchAgent plists running near-duplicate daemons, or two native binaries compiled from the same `go.mod` doing different jobs — the natural question is "can I merge these?". This skill gives you the decision matrix and the runnable steps. It does **not** advocate merging for the sake of it: each consolidation has a real cost (validation, regression test, deployment risk) and the merge should pay for itself in **disk, memory, or cognitive load**.
+
+> **中文注释**: 不要为了合并而合并。每次合并的真实成本包括验证、回归测试、部署风险。如果合并不能换来磁盘、内存或认知负担的节省,就别做。
 
 ## When to Use
 
@@ -34,6 +41,8 @@ When you have multiple Python venvs serving overlapping purposes, several Launch
 
 Before merging anything, score it:
 
+> **中文注释**: 决策矩阵打分。≥7 分强烈合并,5-6 分痛点强才合并,≤4 分别碰。
+
 | Criterion | Score 0 | Score 1 | Score 2 |
 |---|---|---|---|
 | Public-package overlap | <50% | 50-80% | >80% |
@@ -47,6 +56,8 @@ Before merging anything, score it:
 ## Pre-Merge Inventory (Real Evidence, Not Assumptions)
 
 Always do this first. Every conclusion must be backed by `ps`, `lsof`, `pip list`, or `find` — never by backup manifest inference.
+
+> **铁律 (Iron Rule)**: 每个结论必须有 live tool output 支持,不许靠 backup manifest 推断。合并前先做这个清单。
 
 ```bash
 # 1. List every Python venv on the system
@@ -86,6 +97,8 @@ done
 # Don't `rm -rf`. Rename + keep on disk for 1 week.
 mv ~/.path/to/venv-B ~/.path/to/venv-B.deprecated-$(date +%Y%m%d)
 ```
+
+> **中文注释**: 不要 `rm -rf`。先 mv 加 deprecated 日期戳,保留 1 周。
 
 ### Step 2 — Install B's unique packages into A
 
@@ -190,6 +203,8 @@ mv ~/.local/bin/via54-mcp ~/.local/bin/via54-mcp.deprecated-$(date +%Y%m%d)
 
 ## Common Pitfalls
 
+> **中文注释**: 这些坑是从真实 case 里来的,合并前先看一遍。
+
 1. **Inferring from backup manifests instead of `ps`/`lsof`**. Backup manifests are point-in-time; live system state is the truth. **Iron rule: every conclusion must be backed by live tool output, not manifest text.**
 
 2. **Forgetting to kill old daemons before bootstrap**. The new launchd plist will conflict with the running process; symptoms: `Bootstrap failed: 5: Input/output error` or duplicate services competing for the same port.
@@ -205,6 +220,8 @@ mv ~/.local/bin/via54-mcp ~/.local/bin/via54-mcp.deprecated-$(date +%Y%m%d)
 7. **`.deprecated-$(date)` accumulating forever**. After 1 week of stable operation, `rm -rf ~/.local/share/<x>/venv.deprecated-*`. Don't let dead venvs accumulate.
 
 ## Verification Checklist
+
+> **中文注释**: 合并完做这张 checklist,任何一项 ✗ 都不要宣布"完成"。
 
 After any merge:
 
