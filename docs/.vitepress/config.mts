@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import { generateSidebar } from 'vitepress-sidebar'
+import { RssPlugin } from 'vitepress-plugin-rss'
 
 // Phase 2 deploy to GitHub Pages — `base` MUST match the repo name
 // (https://veawho.github.io/via54Skills/). When developing locally
@@ -102,6 +103,13 @@ export default defineConfig({
   cleanUrls: true,
   base: '/via54Skills/',
 
+  // Sitemap (VitePress 1.x built-in): generates dist/sitemap.xml at build
+  // time. host=GitHub Pages URL with the repo path included.
+  // Sitemap is read by Google/Bing/DuckDuckGo for indexing.
+  sitemap: {
+    hostname: 'https://veawho.github.io/via54Skills/',
+  },
+
   // Disable dead-link check: README.md / README.en.md are referenced as
   // string literals inside rule descriptions and Python code examples,
   // not as actual navigable links in the VitePress-rendered site.
@@ -147,5 +155,27 @@ export default defineConfig({
         search: { provider: 'local' },
       },
     },
+  },
+
+  // vite-plugin: RSS feed generator.
+  // Produces dist/feed.rss during build. The plugin also injects an
+  // RSS icon into the navbar's socialLinks automatically.
+  //
+  // Items come from any markdown page that has frontmatter `date:` or
+  // `published:`. SKILL.md files currently don't, so the RSS feed will
+  // be sparse — that's fine for a docs site.
+  //
+  // baseUrl MUST be just the hostname — vitepress-plugin-rss reads
+  // VitePress's `base` config internally and prepends it to baseUrl.
+  // Setting baseUrl to ".../via54Skills/" produced double-prefixed
+  // links like `https://.../via54Skills//via54Skills/en/` in the feed.
+  vite: {
+    plugins: [
+      RssPlugin({
+        title: 'via54Skills',
+        baseUrl: 'https://veawho.github.io',
+        copyright: 'Copyright (c) 2026 veawho',
+      }),
+    ],
   },
 })

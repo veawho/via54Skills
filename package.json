@@ -21,6 +21,7 @@
   "homepage": "https://github.com/veawho/via54Skills#readme",
   "devDependencies": {
     "vitepress": "^1.6.4",
+    "vitepress-plugin-rss": "^0.4.4",
     "vitepress-sidebar": "^1.36.1"
   }
 }
