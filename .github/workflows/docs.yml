@@ -1,0 +1,86 @@
+name: Deploy VitePress to GitHub Pages
+
+# Phase 2 of UPGRADE.md. Triggered by every push to main, plus
+# manual dispatch for ad-hoc re-deploys.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+# Permissions: pages:write + id-token:write are required for the
+# official actions/deploy-pages@v4. Without id-token, deploy fails
+# with "Resource not accessible by integration". content:read is
+# the default for actions/checkout.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Don't cancel an in-flight deploy; let it finish so a half-deployed
+# Pages site is never observed.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build VitePress site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (full history for lastUpdated)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # required by VitePress lastUpdated
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm   # caches ~/.npm → much faster on subsequent runs
+
+      - name: Install dependencies (npm ci, exact lock)
+        run: npm ci
+
+      - name: Build VitePress site
+        run: npm run docs:build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+# Summary you see on the Actions tab:
+#
+# - First run on a fresh repo: ~60-90 s (npm install 126 packages from scratch)
+# - Subsequent runs with cache: ~15-30 s
+# - Build itself (npm run docs:build): ~1-2 s
+# - The rest is VitePress cold-start + GitHub Pages CDN propagation
+
+# To enable: repo → Settings → Pages → Build and deployment →
+# Source: "GitHub Actions" (one-time, in the GitHub UI).
+# After the first successful run, the site is live at:
+#   https://veawho.github.io/via54Skills/

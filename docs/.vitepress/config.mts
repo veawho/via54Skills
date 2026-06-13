@@ -1,8 +1,10 @@
 import { defineConfig } from 'vitepress'
 
-// Phase 1 dev preview — minimal config (no `base` for localhost)
-// For Phase 2 deploy to GitHub Pages, set base: '/via54Skills/'
-// For Phase 3 custom domain, set base: '/' + add docs/public/CNAME
+// Phase 2 deploy to GitHub Pages — `base` MUST match the repo name
+// (https://veawho.github.io/via54Skills/). When developing locally
+// (`npm run docs:dev`), VitePress also respects this base, so sub-route
+// links render as /via54Skills/zh/... in the dev URL bar — that is
+// expected. Phase 3 (custom domain) will change this to '/'.
 
 export default defineConfig({
   title: 'via54Skills',
@@ -10,6 +12,7 @@ export default defineConfig({
   lang: 'zh-CN',
   lastUpdated: true,
   cleanUrls: true,
+  base: '/via54Skills/',
 
   // Disable dead-link check: README.md / README.en.md are referenced as
   // string literals inside rule descriptions and Python code examples,
