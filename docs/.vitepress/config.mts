@@ -30,6 +30,12 @@ import { generateSidebar } from 'vitepress-sidebar'
  * Build a sidebar for a single locale by combining:
  *   - a leading "Home" entry (the locale's `index.md`)
  *   - the auto-scanned list of skills (driven by `generateSidebar`)
+ *
+ * Note: we deliberately do NOT pass `rootGroupLink` to generateSidebar.
+ * The plugin's behavior is that rootGroupText becomes a clickable
+ * link to rootGroupLink, which would duplicate our explicit Home entry.
+ * Passing rootGroupText without rootGroupLink produces a plain text
+ * heading for the skills group instead.
  */
 function buildLocaleSidebar(opts: {
   documentRootPath: string
@@ -42,15 +48,13 @@ function buildLocaleSidebar(opts: {
   skillsGroupText: string
 }) {
   // generateSidebar returns an array of (group) entries.
-  // We pass `rootGroupText` so all skills fall under one "Skills" group,
-  // and we capture the resolved base path so all links are rooted at /<locale>/.
   const items = generateSidebar({
     documentRootPath: opts.documentRootPath,
     scanStartPath: opts.scanStartPath,
     resolvePath: opts.resolvePath,
     basePath: opts.basePath,
-    rootGroupText: opts.rootGroupText,
-    rootGroupLink: opts.homeLink,
+    rootGroupText: opts.skillsGroupText,
+    // No rootGroupLink → rootGroupText becomes a non-clickable header.
     capitalizeFirst: false,        // keep filenames as-is (lowercase + hyphen)
     hyphenToSpace: false,
     underscoreToSpace: false,
@@ -58,8 +62,7 @@ function buildLocaleSidebar(opts: {
     collapsed: false,
   }) as Array<Record<string, any>>
 
-  // Prepend a "Home" link so the locale index is reachable from sidebar.
-  // We give it its own group above the auto-generated Skills group.
+  // Prepend a "Home" group above the auto-generated Skills group.
   return [
     {
       text: opts.rootGroupText, // "开始" / "Get started"
