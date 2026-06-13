@@ -1,0 +1,21 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts (in case you compile inside a skill folder)
+bin/
+*.exe
+*.test
+*.out
+
+# Sensitive / local
+.env
+*.local
