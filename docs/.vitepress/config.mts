@@ -1,6 +1,53 @@
 import { defineConfig } from 'vitepress'
+import { readFileSync } from 'node:fs'
 import { generateSidebar } from 'vitepress-sidebar'
 import { RssPlugin } from 'vitepress-plugin-rss'
+
+// ----------------------------------------------------------------------------
+// Helpers: read the inline SW registrar at build time (no runtime fetch).
+// VitePress renders `head` HTML server-side, so the registrar script is
+// inlined directly into every page — the user's first page load triggers
+// SW registration immediately.
+//
+// Note on path resolution: this file lives at docs/.vitepress/config.mts.
+// The SW registrar sits one level up at docs/scripts/sw-registrar.js —
+// so the relative path is `../scripts/sw-registrar.js`.
+// ----------------------------------------------------------------------------
+const SW_REGISTRAR = readFileSync(
+  new URL('./sw-registrar.js', import.meta.url),
+  'utf8',
+)
+
+// ----------------------------------------------------------------------------
+// JSON-LD: SoftwareApplication schema describing the via54Skills site.
+// Schema.org / Google Rich Results understand this for indexing.
+// We include this once on every page (VitePress inlines via head[]).
+// ----------------------------------------------------------------------------
+const JSON_LD_SOFTWARE = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'via54Skills',
+  alternateName: 'via54 Skills',
+  url: 'https://veawho.github.io/via54Skills/',
+  description:
+    'Personal Skills repository by veawho for Hermes Agent, Claude Code, OpenClaw, OpenCode, and Codex CLI.',
+  inLanguage: ['zh-CN', 'en-US'],
+  author: {
+    '@type': 'Person',
+    name: 'veawho',
+    url: 'https://github.com/veawho',
+  },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://veawho.github.io/via54Skills/{search_term_string}',
+    },
+    // Search is via local FlexSearch inside the page; this entrypoint is
+    // mostly a hint to search engines, not a working endpoint.
+    'query-input': 'required name=search_term_string',
+  },
+})
 
 // Phase 2 deploy to GitHub Pages — `base` MUST match the repo name
 // (https://veawho.github.io/via54Skills/). When developing locally
@@ -114,6 +161,68 @@ export default defineConfig({
   // string literals inside rule descriptions and Python code examples,
   // not as actual navigable links in the VitePress-rendered site.
   ignoreDeadLinks: true,
+
+  // ------------------------------------------------------------------------
+  // head: extra HTML injected into every page's <head>.
+  //
+  // 1. Open Graph + Twitter Card meta: drives link previews in Slack,
+  //    Twitter, Discord, LinkedIn. og-image.png (1200×630) is served at
+  //    /via54Skills/og-image.png by VitePress's static asset pipeline.
+  //
+  // 2. Web App Manifest: makes the site installable as a PWA on iOS/Android.
+  //    Linked from <link rel="manifest">.
+  //
+  // 3. JSON-LD: structured data for Google Rich Results / Knowledge Graph.
+  //    A WebSite schema with name, description, author, languages.
+  //
+  // 4. Service worker registrar: inlined at build time, registers
+  //    /via54Skills/sw.js on every page load (network-first PWA).
+  // ------------------------------------------------------------------------
+  head: [
+    // Open Graph (Facebook / LinkedIn / Slack / Discord / Telegram / etc.)
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:site_name', content: 'via54Skills' }],
+    ['meta', { property: 'og:title', content: 'via54Skills' }],
+    ['meta', {
+      property: 'og:description',
+      content: 'Personal Skills for Hermes / Claude / OpenClaw / OpenCode / Codex',
+    }],
+    ['meta', {
+      property: 'og:image',
+      content: 'https://veawho.github.io/via54Skills/og-image.png',
+    }],
+    ['meta', { property: 'og:image:width', content: '1200' }],
+    ['meta', { property: 'og:image:height', content: '630' }],
+    ['meta', { property: 'og:locale', content: 'zh_CN' }],
+    ['meta', { property: 'og:locale:alternate', content: 'en_US' }],
+    ['meta', { property: 'og:url', content: 'https://veawho.github.io/via54Skills/' }],
+
+    // Twitter Card (X / Twitter)
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:title', content: 'via54Skills' }],
+    ['meta', {
+      name: 'twitter:description',
+      content: 'Personal Skills for Hermes / Claude / OpenClaw / OpenCode / Codex',
+    }],
+    ['meta', {
+      name: 'twitter:image',
+      content: 'https://veawho.github.io/via54Skills/og-image.png',
+    }],
+    ['meta', { name: 'twitter:creator', content: '@veawho' }],
+
+    // Web App Manifest (PWA installability)
+    ['link', { rel: 'manifest', href: '/via54Skills/manifest.webmanifest' }],
+    ['meta', { name: 'theme-color', content: '#3b82f6' }],
+    ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
+    ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }],
+    ['meta', { name: 'apple-mobile-web-app-title', content: 'via54Skills' }],
+
+    // JSON-LD (schema.org structured data for Google Rich Results)
+    ['script', { type: 'application/ld+json' }, JSON_LD_SOFTWARE],
+
+    // Service worker registrar (inlined at build time)
+    ['script', {}, SW_REGISTRAR],
+  ],
 
   // i18n: 中文 (default) + English
   locales: {

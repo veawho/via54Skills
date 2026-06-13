@@ -1,0 +1,25 @@
+{
+  "name": "via54Skills",
+  "short_name": "via54Skills",
+  "description": "Personal Skills by veawho for Hermes / Claude / OpenClaw / OpenCode / Codex",
+  "start_url": "/via54Skills/",
+  "scope": "/via54Skills/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/via54Skills/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/via54Skills/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
