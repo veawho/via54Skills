@@ -269,13 +269,18 @@ cp README.md docs/zh/index.md
 cp README.en.md docs/en/index.md
 
 # Symlink each SKILL.md into both locale skill directories
+# IMPORTANT: docs/zh/skills/ is 3 levels deep under repo root
+# (docs → zh → skills), so the relative path back to via54merge/SKILL.md
+# needs 3 ../ not 2. (Docs previously had this wrong; verified broken.)
 mkdir -p docs/zh/skills docs/en/skills
-ln -s ../../via54merge/SKILL.md docs/zh/skills/via54merge.md
-ln -s ../../via54merge/SKILL.md docs/en/skills/via54merge.md
-ln -s ../../via54goport/SKILL.md docs/zh/skills/via54goport.md
-ln -s ../../via54goport/SKILL.md docs/en/skills/via54goport.md
+ln -s ../../../via54merge/SKILL.md docs/zh/skills/via54merge.md
+ln -s ../../../via54merge/SKILL.md docs/en/skills/via54merge.md
+ln -s ../../../via54goport/SKILL.md docs/zh/skills/via54goport.md
+ln -s ../../../via54goport/SKILL.md docs/en/skills/via54goport.md
 
-# Verify
+# Verify (each should print the SKILL.md content, not "No such file")
+head -3 docs/zh/skills/via54merge.md
+head -3 docs/en/skills/via54goport.md
 ls -la docs/zh/skills/ docs/en/skills/
 ```
 

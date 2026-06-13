@@ -19,3 +19,7 @@ bin/
 # Sensitive / local
 .env
 *.local
+# VitePress (do NOT commit — GitHub Actions will npm install)
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
