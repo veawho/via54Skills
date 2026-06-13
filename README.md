@@ -1,7 +1,9 @@
 # via54Skills
 
-> **中文**: veawho (Devin Wei) 个人写的 Hermes Agent / Claude / OpenClaw / OpenCode / Codex 通用 Skills 仓库。
-> **English**: Personal Skills repository by veawho (Devin Wei), cross-compatible with Hermes Agent, Claude Code, OpenClaw, OpenCode, and Codex CLI.
+> **🌐 语言 / Language**: **中文(默认 · you are here)** · [English →](README.en.md)
+
+veawho (Devin Wei) 个人写的 Hermes Agent / Claude / OpenClaw / OpenCode / Codex 通用 Skills 仓库。
+Personal Skills repository by veawho (Devin Wei), cross-compatible with Hermes Agent, Claude Code, OpenClaw, OpenCode, and Codex CLI.
 
 ---
 
