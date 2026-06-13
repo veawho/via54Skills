@@ -11,8 +11,10 @@ Personal Skills repository by veawho (Devin Wei), cross-compatible with Hermes A
 
 - [默认规则 / Default Rules](#默认规则--default-rules)
 - [命名规范 / Naming Convention](#命名规范--naming-convention)
+- [GitHub Markdown 规范 / GitHub Markdown Spec](#github-markdown-规范--github-markdown-spec)
 - [兼容性 / Compatibility](#兼容性--compatibility)
 - [双语策略 / Bilingual Strategy](#双语策略--bilingual-strategy)
+- [静态站点 (Docusaurus / VitePress) / Static Site](#静态站点-docusaurus--vitepress--static-site)
 - [现有 Skills / Current Skills](#现有-skills--current-skills)
 - [安装 / Installation](#安装--installation)
 - [Git Workflow](#git-workflow)
@@ -22,18 +24,21 @@ Personal Skills repository by veawho (Devin Wei), cross-compatible with Hermes A
 
 ## 默认规则 / Default Rules
 
-> **以下规则写入仓库的硬性默认。违反任何一条的 PR 不会被合入。**
-> The following are hard defaults for this repo. PRs violating any rule will not be merged.
+> 以下规则写入仓库的硬性默认。违反任何一条的 PR 不会被合入。
 
 1. **命名 / Naming**: `via54<lowercase-action>`。Hermes 的 `name` 字段 regex `^[a-z0-9][a-z0-9._-]*$` 强制小写,Claude/OpenClaw/OpenCode/Codex 的 regex `^[a-z0-9]+(-[a-z0-9]+)*$` 也只允许小写 + 单连字符。所以**全小写、无下划线、无点、无连字符**是最大公约数。
 
-2. **双语 README / Bilingual README**: 所有顶层文档(README、AGENTS.md、CONTRIBUTING.md)必须中英双语并列。中文在前(默认),English 跟在后。
+2. **双语 README / Bilingual READMEs**: 所有顶层文档 (`README.md`、`AGENTS.md`、`CONTRIBUTING.md`) 必须中英双语。中文是作者的母语阅读语言,英文是给国际读者和工具的。
 
-3. **中文注释 / Chinese Annotations**: SKILL.md body 里 **重要段落**(决策矩阵、pitfalls、铁律、verification checklist)必须紧跟一段 `> **中文注释**: ...` 解释。目的是让中文用户在阅读时不需要二次翻译。
+3. **`README.md` 是默认页,`README.en.md` 是纯英文版**。两个文件顶部必须有 `🌐 Language / 语言` 互相链接的 banner。默认页**必须**包含切到英文版的链接,英文版**必须**包含返回中文版的链接。
 
-4. **Frontmatter 兼容性 / Frontmatter Compatibility**: 必填字段必须满足**所有**支持工具的 regex,见下表。
+4. **SKILL.md 中文注释 / Chinese Annotations in SKILL.md**: 重要段落(决策矩阵、pitfalls、铁律、verification checklist)必须紧跟一段 `> **中文注释**: ...`。代码块、命令行、文件路径、JSON key 保持英文。
 
-5. **Live 铁律 / Live Iron Rule**: skill 的每条结论必须有 `ps` / `lsof` / `curl` / `find` / 真启动至少 2 种 live tool 输出支持。**禁止靠 backup manifest 或历史推断**。这条铁律写在所有 skill 的 Common Pitfalls 第一条。
+5. **Frontmatter 兼容性 / Frontmatter Compatibility**: 必填字段必须满足**所有**支持工具的 regex,见下表。
+
+6. **Live 铁律 / Live Iron Rule**: skill 的每条结论必须有 `ps` / `lsof` / `curl` / `find` / 真启动至少 2 种 live tool 输出支持。**禁止靠 backup manifest 或历史推断**。这条铁律写在所有 skill 的 Common Pitfalls 第一条。
+
+7. **`README.en.md` 是技术英语而非翻译 / Technical English in `README.en.md`**: 这个文件**不是**中译英。必须使用软件工程标准英语——RFC 2119 关键词 (MUST, SHOULD, MAY),CommonMark / GFM 规范,以及被引用工具自身的术语 (SKILL.md, frontmatter, `metadata`, `name`, regex, validator)。从英语角度直接表述规则,不要镜像中文句式。
 
 ---
 
@@ -43,12 +48,12 @@ Personal Skills repository by veawho (Devin Wei), cross-compatible with Hermes A
 
 ### 例子 / Examples
 
-| Skill | 含义 / Meaning | 命名边界 |
+| Skill | 含义 / Meaning | 命名边界 / Naming pattern |
 |---|---|---|
-| `via54merge` | venv / service / 二进制合并 | 单动作 |
-| `via54goport` | Python → Go 改写 | 动词+宾语 |
-| `via54deploy` | (未来) 部署 | 短动词 |
-| `via54backuprotate` | (未来) 备份轮转 | 复合动作(允许) |
+| `via54merge` | venv / service / 二进制合并 | 单动作 / single verb |
+| `via54goport` | Python → Go 改写 | 动词+宾语 / verb + object |
+| `via54deploy` | (未来) 部署 | 短动词 / short verb |
+| `via54backuprotate` | (未来) 备份轮转 | 复合动作(允许)/ compound (allowed) |
 | ~~`via54Merge`~~ | ❌ 拒:camelCase 不通过 Hermes regex |
 | ~~`via54_merge`~~ | ❌ 拒:下划线被 Claude/OpenCode/OpenClaw regex 拒 |
 | ~~`via54.merge`~~ | ❌ 拒:点被 Claude/OpenCode/OpenClaw regex 拒 |
@@ -63,6 +68,40 @@ Personal Skills repository by veawho (Devin Wei), cross-compatible with Hermes A
 
 ---
 
+## GitHub Markdown 规范 / GitHub Markdown Spec
+
+> 两个 README **必须**符合 **GitHub Flavored Markdown (GFM)** 才能在 `github.com` 正确渲染。
+
+### GFM 强制规则 / GFM Rules We Enforce
+
+1. **每个文件一个 `# ` 标题**(文件标题)。其余章节标题用 `## `、`### ` 等。
+2. **围栏代码块用三反引号**(` ``` `)。**总是**带语言标签(`bash`、`yaml`、`python` 等)用于语法高亮。
+3. **GFM 表格**用 `|` 分隔 + `---` 对齐行。保持列数一致。
+4. **相对链接**用于仓库内导航(`[text](README.en.md)`、`[text](via54merge/SKILL.md)`)。GitHub 自动解析到 `blob/main/...`。
+5. **允许的 HTML**:只有 GFM 安全标签(`details`、`summary`、`kbd`、`sub`、`sup`、`img`、`br` 等)。**禁止**: `<script>`、`<style>`、`<iframe>`、inline CSS、`class` / `id` 属性。
+6. **行长度**: GFM 不强制,但散文行保持 ≤200 字符以保留 diff 可读性。
+7. **无尾随空格**。**无连续空行** (连续 >2 空行禁止)。
+8. **Tab**:markdown 散文里禁止(嵌套列表用 2 或 4 空格)。
+
+### 验证 / Validation
+
+```bash
+# 轻量 GFM lint (自定义检查 — 没有通用工具)
+python3 << 'PYEOF'
+import re, pathlib
+for p in [pathlib.Path('README.md'), pathlib.Path('README.en.md')]:
+    txt = p.read_text()
+    no_code = re.sub(r'```.*?```', '', txt, flags=re.DOTALL)
+    h1 = len(re.findall(r'^# [^\n]+', no_code, re.MULTILINE))
+    assert h1 == 1, f'{p}: {h1} H1 headings (want 1)'
+    assert '\t' not in txt, f'{p}: contains tabs'
+    assert not re.search(r'\n\n\n+', txt), f'{p}: consecutive blank lines'
+    print(f'  ✓ {p}')
+PYEOF
+```
+
+---
+
 ## 兼容性 / Compatibility
 
 > **现状**: SKILL.md 是 Anthropic 2025-12-18 发布的 [Agent Skills 开放标准](https://agentskills.io)。**Claude Code / Hermes Agent / OpenClaw / OpenCode / Codex CLI** 全部兼容。
@@ -74,9 +113,9 @@ Personal Skills repository by veawho (Devin Wei), cross-compatible with Hermes A
 | `name` (必填) | `^[a-z0-9][a-z0-9._-]*$` ≤64 | `^[a-z0-9]+(-[a-z0-9]+)*$` ≤64 | 同 Claude | 同 Claude | 同 Claude |
 | `description` (必填) | ≤1024 | ≤1024 | ≤1024 | ≤1024 | ≤1024 |
 | `license` | optional | optional | optional | optional | optional |
-| `compatibility` | **忽略** | optional | optional | optional | optional |
+| `compatibility` | 忽略 | optional | optional | optional | optional |
 | `metadata` | `metadata.hermes.{tags,related_skills}` 嵌套 | flat string→string | flat | flat | flat |
-| `when_to_use` | **不支持** | optional | optional | optional | optional |
+| `when_to_use` | 不支持 | optional | optional | optional | optional |
 | `allowed-tools` | 不支持 | 实验性 | 实验性 | 不支持 | 不支持 |
 
 ### 我们的标准 frontmatter 模板 / Our Standard Template
@@ -127,22 +166,23 @@ print('✓ Claude/OpenCode/OpenClaw/Codex OK')
 
 ## 双语策略 / Bilingual Strategy
 
-> **目标**: 中文是默认阅读语言,英文是国际通用 + 让 Claude/OpenClaw 等英文 AI 工具更好理解。
+> **目标**: 中文是作者的母语阅读语言,英文是国际通用 + 让 Claude/OpenClaw 等英文 AI 工具更好理解 metadata。
 
 ### 规则 / Rules
 
-1. **README / AGENTS.md / CONTRIBUTING.md**: 顶部放中文(完整版本),下面紧跟 English version(等价内容,不一定逐字)。中文在前是**用户偏好**,不是质量判断。
-
-2. **SKILL.md body**: **不需要逐段双语**——这是技术文档,中文注释足够了。规则:
+1. **`README.md` / `AGENTS.md` / `CONTRIBUTING.md`**: 顶部放中文(完整版本),下面紧跟 English version(等价内容,不一定逐字)。中文在前是**用户偏好**,不是质量判断。
+2. **`README.en.md`**: **纯英文原生文档,不是翻译**。遵循 RFC 2119 关键词 (MUST, SHOULD, MAY),使用被引用工具自身的术语 (`SKILL.md`, `frontmatter`, `metadata`, `validator`)。
+3. **语言切换 banner** 每个 README 顶部都要有:
+   ```
+   > **🌐 Language / 语言**: [← 中文(默认)](README.md) · **English**(you are here)
+   ```
+4. **SKILL.md body**: **不需要逐段双语**——这是技术文档,中文注释足够了。规则:
    - **每个 `## ` 大段落开头**(Overview / When to Use / Decision Matrix / Pitfalls / Verification):在第一段 `>` 引用块里用 `**中文摘要** (Chinese Summary): ...` 给一段中文摘要
    - **关键表格 / 决策 / pitfall / iron rule 之后**:跟一段 `> **中文注释**: ...`
-   - 代码块、命令行、文件路径**保持英文**(这些是机器可读的,翻译反而错)
-
-3. **Frontmatter description**: **保持英文**。原因:`description` 是 trigger 字段,英文 AI 工具的触发匹配更好。中文会大幅降低英文 AI 工具的识别率。
-
-4. **Frontmatter metadata.tags**: **保持英文**(空格分隔),同 description 原因。
-
-5. **Commit messages**: **英文**。GitHub 是英文主导,中文 commit message 难搜。
+   - **代码块、命令行、文件路径**保持英文(这些是机器可读的,翻译反而错)
+5. **Frontmatter description**: **保持英文**。原因:`description` 是 trigger 字段,英文 AI 工具的触发匹配更好。中文会大幅降低英文 AI 工具的识别率。
+6. **Frontmatter metadata.tags**: **保持英文**(空格分隔),同 description 原因。
+7. **Commit messages**: **英文**。GitHub 是英文主导,中文 commit message 难搜。
 
 ### 双语示例 / Bilingual Example
 
@@ -165,6 +205,62 @@ When you have multiple Python venvs serving overlapping purposes...
 
 > **中文注释**: 决策矩阵打分。≥7 分强烈合并,5-6 分痛点强才合并,≤4 分别碰。
 ```
+
+---
+
+## 静态站点 (Docusaurus / VitePress) / Static Site
+
+> 当前仓库用纯 Markdown README。如果 skill 数量增长超过 ~10 个,SSG + 原生 i18n 是合理升级路径。这节记录升级成本,**避免下次重新研究**。
+
+### 何时升级 / When to Migrate
+
+| 信号 / Signal | 阈值 / Threshold |
+|---|---|
+| 仓库 skill 数量 | ≥ 10 |
+| 分类或主题分组数 | ≥ 3 |
+| 想在 SKILL 文档旁加教程 / 博客 / changelog | 任意 |
+| 用户要搜索 / 版本钉住 / 侧边栏导航 | 任意 |
+
+如果以上都不满足,**保持纯 Markdown** —— Docusaurus + VitePress 增加 ~150 MB `node_modules` + 每次改动都要 build。
+
+### Docusaurus v3 (当前 3.10.x)
+
+| 要求 | 最低 |
+|---|---|
+| Node.js | 18.0+ (推荐 20 LTS) |
+| `node_modules` 磁盘 | ~400 MB |
+| `package.json` scripts | `start`, `build`, `serve`, `clear`, `deploy` |
+| i18n 配置 | `docusaurus.config.js` → `i18n: { defaultLocale: 'zh', locales: ['zh', 'en'] }` |
+| 内容布局 | `i18n/zh/...` 镜像源文件 + 每个页面 `locale.json` |
+| Build 时间 | 冷启动 30-90s,热 1-5s |
+
+### VitePress (当前 1.x stable)
+
+| 要求 | 最低 |
+|---|---|
+| Node.js | 18.0+ (推荐 20 LTS) |
+| `node_modules` 磁盘 | ~250 MB |
+| 配置文件 | `.vitepress/config.mts` → `locales: { root: { label: '中文', lang: 'zh-CN' }, en: { lang: 'en-US' } }` |
+| 内容布局 | `docs/<lang>/<page>.md` |
+| Build 时间 | 冷启动 5-30s,热 <1s |
+
+### 对比 / Comparison
+
+| 维度 | Docusaurus v3 | VitePress |
+|---|---|---|
+| 依赖体积 | ~400 MB `node_modules` | ~250 MB `node_modules` |
+| Build 速度 | 较慢 (React + MDX) | 较快 (Vue + markdown) |
+| i18n UX | 完整 locale switcher,版本化文档 | 完整 locale switcher,无版本化 |
+| 搜索 | Algolia / 本地 | 本地 FlexSearch (默认) |
+| 主题 | Infima (CSS) | 默认 Vue theme |
+| SKILL.md frontmatter 透传 | 需要插件 | 需要插件 |
+| 适合 | 大型 doc portal | 小中型文档 + 博客 |
+
+### via54Skills 推荐 / Recommendation
+
+- **现在** (2 个 skill): 保持纯 Markdown + 双 `README.md` / `README.en.md`。
+- **约 10 个 skill 时**: 迁到 **VitePress**——更轻、更快、目录式 i18n 自然映射到 skill 目录。
+- **如果出现博客 / 教程系列**: 升级 Docusaurus——自带更多(MDX、博客插件、版本化文档),值得更重的工具链。
 
 ---
 
