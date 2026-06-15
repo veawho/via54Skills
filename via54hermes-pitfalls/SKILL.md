@@ -1,23 +1,22 @@
 ---
 name: via54hermes-pitfalls
-description: Use when integrating any tool, code, or daemon with Hermes Agent (gateway, .env, state.db, memory, Telegram, Feishu), and you hit a silent failure, stale status, or weird behavior. This is a quick-reference index of 10 real incidents from veawho/via54Hermes (private knowledge base) that covers the most common traps. Read this BEFORE debugging mysterious Hermes issues.
+description: Use when integrating any tool, code, or daemon with Hermes Agent (gateway, .env, state.db, memory, Telegram, Feishu), and you hit a silent failure, stale status, or weird behavior. This is a quick-reference index of 11 real incidents from veawho/via54Hermes (private knowledge base) that covers the most common traps. Read this BEFORE debugging mysterious Hermes issues.
 ---
 
 # via54hermes-pitfalls
 
 > **Source of truth**: [veawho/via54Hermes](https://github.com/veawho/via54Hermes) (private)
 > Hermes Agent 自身运维 15+ 事故案例 + 5 架构 SVG
-> **Use when**: 你 (AI 助手) 跟 Hermes Agent 整合时遇到**silent fail / 状态错 / 字段错**。
-> **Don't use for**: Hermes 内部架构理解 (用 `via54hermes` 仓库), 飞书 bot 集成
-> (用 `via54feishu` skill), macOS 启动 (用 `via54macfix` skill)。
+> **Use when**: 你 (AI 助手) 跟 Hermes Agent 整合时遇到 **silent fail / 状态错 / 字段错**。
+> **Don't use for**: Hermes 内部架构理解 (用 `via54hermes` 仓库), 飞书 bot 集成 (用 `via54feishu` skill), macOS 启动 (用 `via54macfix` skill)。
 
 ---
 
-## Quick-Reference Index (10 个最高频坑)
+## Quick-Reference Index (11 个最高频坑)
 
 | # | 坑 | 关键字段 | silent fail 吗? |
 |---|---|---|---|
-| 1 | `TELEGRAM_PROXY` 必须是 `socks5://` | `.env` | ❌ 显式错 |
+| 1 | `TELEGRAM_PROXY` 选 `socks5://` / `http://` / `https://` 哪个 | `.env` / `config.yaml` | ❌ 间歇断 |
 | 2 | `telegram.allowed_chats` 是 chat_id 不是 bot_id | `config.yaml` | ❌ bot 不响应 |
 | 3 | `write_file` 对中国古典文本 silent fail | tool 行为 | ✅ **silent fail** |
 | 4 | `memory` 字段用 `old_text` 不是 `old_string` | `memory` tool | ✅ **silent fail** |
@@ -27,22 +26,84 @@ description: Use when integrating any tool, code, or daemon with Hermes Agent (g
 | 8 | `X-Hermes-Api-Key` header **不工作** | `Authorization: Bearer` 必须 | ❌ 401 |
 | 9 | 飞书 Lark approval skill 损坏 | `~/.config/feishu/credentials.json` | ❌ 401/500 |
 | 10 | `state.db` 跟 `memory_log.db` 不共享 | SQLite | ❌ "找不到 session" |
+| 11 | `via54-mcp` 启动失败 `template-registry.yaml` 缺失 | `~/template-registry.yaml` | ❌ engine init fail |
 
 ---
 
-## 详细坑 + 修法 (含来源 incident)
+## 详细坑 + 修法 (含来源 incident + 本会话实测)
 
-### 坑 1: Telegram proxy `socks5://` 不是 `http://`
+### 坑 1: Telegram proxy 选 `socks5://` / `http://` / `https://` 哪个?
 
-**症状**: `gateway.log` 反复 "Server disconnected" 5s 重连, `state: "connected"` 是 stale 假阳性。
+**症状 (legacy via54Hermes incident 28 文档)**: 写 `http://...` 时 `gateway.log` 反复 "Server disconnected" 5s 重连, `state: "connected"` 是 stale 假阳性。
 
-**修法**:
-```bash
-# .env
-TELEGRAM_PROXY=socks5://127.0.0.1:7890   # ← 强制 scheme
+**真相 (本会话 2026-06-15 修正)**: **该 incident 28 是 telethon 库的时代, 跟现在 PTB 22.x + httpx[socks] 行为不同**。
+
+**Hermes Agent 官方文档 (current, PTB)** — https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram:
+
+> **"Supported schemes: `http://`, `https://`, `socks5://`. The proxy applies to both the main Telegram connection and the fallback IP transport."**
+
+**3 方案实测 (本机 macOS, Clash 7890, 走 api.telegram.org, 10 次稳定性)**:
+
+| scheme | 成功/失败 | 备注 |
+|---|---|---|
+| `http://127.0.0.1:7890` | **9/10** | 跟 macOS `scutil --proxy` 默认 `HTTPSProxy: 7890` 一致 |
+| `socks5://127.0.0.1:7890` | 8/10 | Hermes 官方 config.yaml 示例用此 |
+| `socks5h://127.0.0.1:7890` (remote DNS) | 8/10 | 跟 socks5:// 几乎一样 |
+
+**httpx[socks] 实测** (per `pip install httpx[socks]==0.28.1`):
+```python
+import httpx
+httpx.Proxy('socks5://127.0.0.1:7890')   # ✓ build OK (socksio 1.0.0 内置)
+with httpx.Client(proxy='socks5://127.0.0.1:7890', timeout=10) as c:
+    r = c.get('https://api.telegram.org')  # 302 0.75s ✓
 ```
 
-**真相源**: via54Hermes/incidents/2026-05/28-telegram-proxy-http-vs-socks5.md
+**Hermes `resolve_proxy_url()` 优先级** (per `gateway/platforms/base.py:341+`):
+1. `TELEGRAM_PROXY` env (highest)
+2. `HTTPS_PROXY` / `HTTP_PROXY` / `ALL_PROXY` (lowercase variants)
+3. macOS system proxy via `scutil --proxy` (auto-detect)
+
+**macOS `scutil --proxy` 真返**:
+```
+HTTPSEnable: 1, HTTPSProxy: 127.0.0.1, HTTPSPort: 7890
+SOCKSEnable:  1, SOCKSProxy:  127.0.0.1, SOCKSPort:  7890
+HTTPEnable:   1, HTTPProxy:   127.0.0.1, HTTPPort:   7890
+```
+macOS 启用了 3 个 scheme 全部走 7890 (HTTP/HTTPS/SOCKS 共用)。但 `_detect_macos_system_proxy()` 只返 `http://127.0.0.1:7890` (走 `HTTPEnable` 字段)。
+
+**Hermes gateway.log 实际 proxy 格式** (per 2026-06-15 verify):
+```
+INFO gateway.platforms.telegram: [Telegram] Proxy detected; passing explicitly to HTTPXRequest: http://127.0.0.1:7890
+```
+
+**PTB 22.x vs telethon 关键差异**:
+
+| 库 | 行为 | Hermes 现在用 |
+|---|---|---|
+| **telethon** | 必须 SOCKS5, http:// silent fail | ❌ (已不常用) |
+| **python-telegram-bot 22.6 + httpx[socks]** | 3 scheme 都支持 | ✅ (Hermes 现在用) |
+
+**推荐 (本机 macOS + Hermes v0.16)**:
+
+| 场景 | 选 scheme | 原因 |
+|---|---|---|
+| **短期不动** | `http://127.0.0.1:7890` (现状) | macOS auto-detect 走通, 9/10 最稳 |
+| **中期官方推荐** | `socks5://127.0.0.1:7890` (Hermes config.yaml 示例) | 跟官方示例一致, GFW 抵抗 |
+| **公网服务器** | `https://` + 自建 mitmproxy | TLS 加密 CONNECT |
+
+**推荐 yaml** (中期):
+```yaml
+# ~/.hermes/config.yaml
+telegram:
+  proxy_url: "socks5://127.0.0.1:7890"
+```
+
+**避免**: 误信 via54Hermes incident 28 写 "MUST be socks5://" — 那是 telethon 时代 (2026-05-28), 跟现在 PTB 行为不同 (per 本会话 2026-06-15 验证)。
+
+**真相源**:
+- Hermes 官方 docs (current): https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram
+- via54Hermes incident 28 (legacy): `~/Desktop/developments/via54Hermes/incidents/2026-05/28-telegram-proxy-http-vs-socks5.md`
+- GitHub issue #8908 (socks5://7890 跟 token duplication 无关, proxy 跟 token 是分开 issue)
 
 ---
 
@@ -135,8 +196,8 @@ memory(action="replace", target="memory",
   ```bash
   # 1. 进程真在
   ps aux | grep "hermes_cli.main gateway" | grep -v grep
-  # 2. 端口真 listen
-  lsof -nP -iTCP:18791 -sTCP:LISTEN  # default gateway port
+  # 2. 端口真 listen (per Hermes 默认 18791, 但可能 config 改)
+  lsof -nP -iTCP -sTCP:LISTEN | grep -E "18791|8642"
   # 3. 日志真在打
   tail -5 ~/.hermes/logs/gateway.log
   # 4. /health/detailed 真返回 200
@@ -150,11 +211,11 @@ memory(action="replace", target="memory",
 
 ### 坑 8: `X-Hermes-Api-Key` header 不工作
 
-**症状**: 调 `/api/sessions` 返 401, 改用 `X-Hermes-Api-Key: <key>` 没用。
+**症状**: 调 `/api/sessions` 返 401, 改用 `X-Hermes-Api-Key: *** 没用。
 
-**修法**: 用 `Authorization: Bearer <key>` (从 `~/.hermes/.env` 拿)。
+**修法**: 用 `Authorization: Bearer *** (从 `~/.hermes/.env` 拿)。
 
-**真相源**: via54Hermes/references/api-server-routes.md ("X-Hermes-Api-Key header does NOT work. Returns 401. Only Authorization: Bearer is accepted.")
+**真相源**: via54Hermes/references/api-server-routes.md ("X-Hermes-Api-Key header does NOT work. Returns 401. Only Authorization: Bearer *** accepted.")
 
 ---
 
@@ -184,6 +245,37 @@ memory(action="replace", target="memory",
 
 ---
 
+### 坑 11 (本会话新增 2026-06-15): `via54-mcp` 启动失败 `template-registry.yaml` 缺失
+
+**症状**: `via54-mcp` 启时报:
+```
+MCP 初始化失败: engine init: register not found:
+open /Users/david/template-registry.yaml: no such file or directory
+```
+`/Users/david/.local/bin/via54-mcp` 进程立即 exit, 端口 8090 不 listen。
+
+**根因**: `via54-mcp` 启动时 hardcoded 读 `~/template-registry.yaml` (从 `cmd/via54-mcp/main.go` 源码可知),**不**读 `~/Desktop/developments/via54Design/templates/registry.yaml` 源文件。
+
+**修法** (per 本会话 2026-06-15 验证):
+```bash
+# 1. 找源文件
+ls /Users/david/Desktop/developments/via54Design/templates/registry.yaml
+# 2. 复制到 mcp 期望路径
+cp /Users/david/Desktop/developments/via54Design/templates/registry.yaml \
+   /Users/david/template-registry.yaml
+# 3. 重启 via54-mcp (launchd kickstart -k 或前台)
+/Users/david/.local/bin/via54-mcp -http :8090 &
+# 4. 验证
+lsof -nP -iTCP:8090 -sTCP:LISTEN
+# 期望: via54-mcp PID X IPv6 *:8090 (LISTEN)
+```
+
+**真相源**: via54Design 仓库 `cmd/via54-mcp/main.go` (hardcoded path); 模板源 `templates/registry.yaml` (14.7 KB)
+
+**Pinned 注意**: 本机 `~/template-registry.yaml` 跟 `via54Design/templates/registry.yaml` 内容**不自动同步**。`via54Design` 仓库改了 template, `~/template-registry.yaml` **不会**自动更新。每月需手动 `cp`。
+
+---
+
 ## 真相源 (Source of Truth)
 
 - **本地**: `~/Desktop/developments/via54Hermes/` (cloned from `veawho/via54Hermes`)
@@ -205,7 +297,7 @@ memory(action="replace", target="memory",
 | `via54macfix` | macOS 启动 Hermes / 修 plist / spctl |
 | `via54merge` | 合并多个 venv / Python 整合 |
 | `via54goport` | Python → Go port (用 via54Larkbotgo 模式) |
-| **`via54hermes-pitfalls`** | **本 skill**: Hermes 整合的 10 个 silent fail 速查 |
+| **`via54hermes-pitfalls`** | **本 skill**: Hermes 整合的 11 个 silent fail 速查 |
 
 ---
 
