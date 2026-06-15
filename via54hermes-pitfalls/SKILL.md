@@ -36,7 +36,7 @@ description: Use when integrating any tool, code, or daemon with Hermes Agent (g
 
 **症状 (legacy via54Hermes incident 28 文档)**: 写 `http://...` 时 `gateway.log` 反复 "Server disconnected" 5s 重连, `state: "connected"` 是 stale 假阳性。
 
-**真相 (本会话 2026-06-15 修正)**: **该 incident 28 是 telethon 库的时代, 跟现在 PTB 22.x + httpx[socks] 行为不同**。
+**真相 (本会话 2026-06-15 修正)**: **该 incident 28 是 telethon 库的时代, 跟现在 PTB 22.6 + httpx[socks]==0.28.1 行为不同**。
 
 **Hermes Agent 官方文档 (current, PTB)** — https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram:
 
