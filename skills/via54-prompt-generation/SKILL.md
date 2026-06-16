@@ -215,17 +215,24 @@ version: "1.0.0"
 
 ---
 
-## 平台特定优化
+## 平台特定优化 (真值 2026-06-16 查)
 
-| 平台 | 字数限制 | 关键参数 | 风格 |
-|------|---------|----------|------|
-| jimeng | ≤1500 字 | 中文友好 | 中文营销 |
-| midjourney | ≤4500 字 | `--style raw --v 6` | 高端艺术 |
-| flux | ≤4000 字 | 自然语言 | 真实感 |
-| gemini | ≤8000 字 | 详细描述 | 详细精确 |
-| sora | ≤4000 字 | 视频特定 | 动态镜头 |
-| stable_diffusion | ≤380 字 | 短关键词 | 通用 |
-| 通用 (默认) | 不限 | 详细段落 | 全场景 |
+> 来源: 各平台官方文档 + via54Design YAML 模板 + Hugging Face 模型卡
+
+| 平台 | 字数限制 (真值) | 关键参数 | 官方来源 |
+|------|-----------------|----------|---------|
+| **midjourney** | 3500-4500 字 (保守 3500) | `--v 6.1 --style raw --s 250` | v6.x 官方 |
+| **flux** | **512 tokens ≈ 2000 字** | 自然语言格式 | Black Forest Labs |
+| **dalle3** | **4000 字** (硬限) | 自然语言 | OpenAI 官方 |
+| **stable_diffusion** | **77 tokens ≈ 380 字** (CLIP 硬截断) | 短 keyword | Stability AI |
+| **sd3** | 77 token CLIP + 512 token T5 | 短 keyword | Stability AI |
+| **gemini (Imagen)** | Imagen 480 token ≈ 1500 字 (Gemini 1.5 长上下文支持) | 详细描述 | Google AI |
+| **即梦 (jimeng)** | **≤800 字** (建议 400, 火山引擎官方) | 中文友好 | 字节跳动火山引擎 |
+| **seedance** | 字节跳动, 类似 jimeng ≤800 字 | 中文友好 | 字节跳动 |
+| **ideogram / recraft** | 无明确官方限制 (保守 1500 字) | 自然语言 | 无官方 |
+| **veo / kling / sora / pika** | 无明确硬限制 (保守 1500 字) | 视频特定 | 视频平台无明确公开限制 |
+| **minimax** | via54 新增 (保守 1500 字) | 自然语言 | via54 内部 |
+| **通用 (默认)** | 不限 (via54 不截断) | 全场景详细 | via54Design |
 
 **bot 默认行为**:
 1. 第一次: **不指定平台**,生成"通用"细节拉满版
@@ -359,6 +366,128 @@ A cinematic split-screen photograph of two young Asian women...
   --scene "<scene>" \
   --platform midjourney
 ```
+
+---
+
+## 真集成踩过的坑 (重要 — 避免重蹈)
+
+### 坑 1: Channel SDK handler 签名是 `(inbound)`, 不是 `(channel, inbound)`
+
+```python
+# ❌ 错 — Channel SDK 调 handler(channel, inbound) 实际不是这样
+async def handler(channel, inbound):
+    await on_message(channel, inbound)
+channel.on("message", handler)
+
+# ✅ 对 — Channel SDK 调 handler(inbound) 一个参数
+# channel 通过 module-level 变量访问 (不能在闭包外)
+async def on_message(inbound: InboundMessage) -> None:
+    ...
+channel.on("message", on_message)  # 不包 wrapper
+```
+
+**为什么:** Channel SDK `_dispatch_inbound_to_user` → `_invoke("message", inbound)` → `handler(*args)` 只传 1 个参数 `inbound`。
+
+### 坑 2: RetryConfig 参数名是 `base_delay_ms` 不是 `initial_delay` / `max_delay`
+
+```python
+# ❌ 错 (lark SDK 1.6.8 RetryConfig 真字段)
+RetryConfig(max_attempts=3, initial_delay=0.5, max_delay=10.0)
+# TypeError: RetryConfig.__init__() got an unexpected keyword argument 'initial_delay'
+
+# ✅ 对
+RetryConfig(max_attempts=3, base_delay_ms=500)
+```
+
+### 坑 3: vision_analyze_tool 在 async loop 内不能 `asyncio.run()`
+
+```python
+# ❌ 错 — 在 async on_message 里调 sync call_vision → asyncio.run 冲突
+def call_vision(image_path):
+    asyncio.run(_vt.vision_analyze_tool(...))  # RuntimeError
+
+# ✅ 对 — on_message 本身就是 async, 直接 await
+async def on_message(inbound):
+    ...
+    result_str = await _vt.vision_analyze_tool(
+        image_url=img_path,
+        user_prompt="详细描述这张图 (主体/姿态/表情/背景/构图/色调/风格). 输出 200-500 字纯中文.",
+    )
+```
+
+### 坑 4: macOS launchd plist YAML 嵌套坑 (PlistBuddy 加错字段)
+
+`launchctl bootstrap` + PlistBuddy 加 EnvironmentVariables **不能**用 `EnvironmentVariables.FOO` 嵌套 key (会创建空 plist 但 launchd 不认):
+
+```xml
+<!-- ❌ 错 — PlistBuddy "Add :EnvironmentVariables.FEISHU_CONNECTION_MODE string webhook" 创建空字段 -->
+<key>EnvironmentVariables.FEISHU_CONNECTION_MODE</key>
+<string>webhook</string>
+
+<!-- ✅ 对 — 用嵌套 dict -->
+<key>EnvironmentVariables</key>
+<dict>
+    <key>FEISHU_CONNECTION_MODE</key>
+    <string>webhook</string>
+</dict>
+```
+
+**验证方法:** `launchctl print gui/$UID/<service> | grep -A 5 environment` 应该看到 env 真注入。
+
+### 坑 5: cloudflared 临时隧道 vs ngrok 永久 URL
+
+| | cloudflared trycloudflare | ngrok free |
+|---|---|---|
+| URL 稳定性 | ❌ **每次重启 URL 变** | ✅ 永久 URL (绑定 authtoken 账号) |
+| macOS launchd 守护 | ❌ SIGTERM 杀掉 | ✅ 真稳 |
+| 平台 | Cloudflare 账号 | ngrok 账号 (1 分钟注册) |
+
+**真选 ngrok** — Cloudflare 命名 tunnel 真治本但需域名 (2-3 小时), ngrok 30 分钟搞定, free plan 永久 URL。
+
+### 坑 6: 飞书 v2 webhook 加密事件 — Channel SDK signature 算法
+
+```python
+# Channel SDK 签名校验算法 (LARK_REQUEST_TIMESTAMP + LARK_REQUEST_NONCE + ENCRYPT_KEY + body):
+h = sha256(timestamp + nonce + ENCRYPT_KEY + body)
+# 必须 sha256(timestamp+nonce+KEY+body_bytes) — 4 段拼接
+```
+
+模拟事件测试时,**必须**用真签名算法 (不是简单 SHA256 body), 否则 Channel SDK 返 500。
+
+### 坑 7: Hermes `auxiliary.vision.provider` 默认是 `minimax-cn`, 不是 OpenRouter
+
+```yaml
+# ~/.hermes/config.yaml
+auxiliary:
+  vision:
+    provider: minimax-cn
+    model: MiniMax-M3
+```
+
+`vision_analyze_tool` 走 `agent.auxiliary_client.resolve_vision_provider_client()` 自动用 `minimax-cn` + `MiniMax-M3` (默认 Gemini 3 Flash 路由)。**不直接调 OpenRouter** (除非显式配置)。
+
+---
+
+## 关键会话教训
+
+1. **"等我设置完了" 必须自己查** — 看到用户说 "已改完", 不要假设成功, 直接调 API / curl 验证。
+2. **多 agent 加速是错觉** — 我之前 5 个 subagent 并行干, 第一个 completed 没输出报告就退, 真治本单线程更稳。
+3. **5 大能力不一定要全用** — Channel SDK 默认值在大多数场景够用, 仅当用户明确要求才覆盖 (如 outbound text_chunk_limit)。
+4. **bot "失忆" 真因不是 v2 webhook 没 parent_id** — 是 Channel SDK 自动 normalize 到 `inbound.reply_to_message_id`, 之前 m12 bot 没读这字段。
+
+---
+
+## 配套资源
+
+### References
+- `references/tunnel-selection.md` — 飞书 bot 公网隧道选型 (ngrok vs cloudflared vs Tailscale) + 完整 launchd plist 模板
+- `references/feishu-channel-sdk-guide.md` — Channel SDK 5 大能力完整集成 (Policy/Safety/Inbound/Outbound 真参数 + 真坑 + 签名算法)
+- `references/vision-to-english.md` — vision 中文描述 → via54 英文 prompt 转换
+
+### Templates (复制修改即可用)
+- `templates/feishu_channel_bot_template.py` — 完整 Channel SDK bot 模板 (5 大能力 + aiohttp + 真集成方式)
+- `templates/via54_session_template.py` — 多轮 session 记忆 + via54Design 14 平台调度 + 平台字数限制表
+- `templates/com.david.feishu-bot-template.plist` — macOS launchd plist 模板 (KeepAlive + ThrottleInterval, 避免 PlistBuddy 嵌套坑)
 
 ---
 
