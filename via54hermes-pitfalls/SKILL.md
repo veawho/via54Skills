@@ -306,3 +306,51 @@ lsof -nP -iTCP:8090 -sTCP:LISTEN
 - 跟 via54Hermes GitHub 同步 (每月 1 次)
 - 跟 via54Larkbotgo / Larkfix 仓库的 `references/hermes-pitfalls.md` 内容 1:1 (per design)
 - 新 incident 加到 via54Hermes 后, 这里 1 周内 mirror
+
+
+---
+
+## 12. Hermes PR #31441 修法 (per 2026-06-15)
+
+> **来源**: Hermes 官方 PR [NousResearch/hermes-agent#31441](https://github.com/NousResearch/hermes-agent/pull/31441) (c0441cb) — "fix(telegram): detect wedged send path after reconnect storm". Closes #31165 (P1).
+>
+> **本地 verify**: PR #31441 修法已 100% 整合在本机 Hermes v0.16 (line 128/904/1002/1800), 3/3 官方 tests pass.
+
+### 12.1 修法核心 (Telegram side)
+
+| 字段 | 位置 | 作用 |
+|---|---|---|
+| `_send_path_degraded: bool` | `__init__` (line 128) | send 路径健康状态 |
+| `_send_path_degraded = True` | `_handle_polling_network_error` (line 904) | reconnect 期间 set |
+| `_send_path_degraded = False` | `_verify_polling_after_reconnect` (line 1002) | 60s heartbeat 确认 getMe() 健康后 clear |
+| `if getattr(self, "_send_path_degraded", False): return SendResult(success=False, error="send_path_degraded", retryable=True)` | `send()` (line 1800) | degraded 期间 short-circuit, 让 cron 走 standalone HTTP path |
+
+### 12.2 修法概念 (适用所有 send 路径, 包括 Larkfix 飞书 daemon)
+
+Hermes PTB Telegram httpx pool 跟 Larkfix 飞书 urllib pool 行为不同 (一个 httpx, 一个 urllib), 但**概念是通用的**:
+1. **Set on fail**: N+ consecutive error → set degraded flag
+2. **Clear on recover**: M+ consecutive success → clear degraded flag
+3. **Short-circuit when degraded**: send() returns retryable=False, 让 caller 走 fallback
+
+### 12.3 Larkfix 应用 (本机 4 仓库)
+
+| 仓库 | 修法应用 | Commit |
+|---|---|---|
+| via54Larkfix common/bot/feishu_bot_daemon.py | 33 LOC (5 inline additions + 4 condition sets) | `952892c` (Larkfix main) |
+| via54Larkbotgo reference/python-original/feishu_bot_daemon.py | Larkfix common/bot/ 1:1 镜像 | `81674a7` (Larkbotgo main) |
+| via54Larkfix common/inbox_watcher.py | 已有 retry (MAX_RETRIES=3, _count_retries) — 不需改 | (无) |
+| via54Larkfix inbox/inbox_watcher.py | 已有 retry — 不需改 | (无) |
+
+### 12.4 跟 issue #31165 的关系
+
+PR #31441 closes [issue #31165](https://github.com/NousResearch/hermes-agent/issues/31165) (P1, "Cron Telegram live-adapter delivery can silently drop messages after reconnect storms"):
+- 4 修保留的"`Server disconnected` 5s × 10 retry" 期间,如果 storm 长 (>60s), PTB httpx pool 进入"wedged" state
+- `bot.send_message()` 返 valid Message (real `message_id`) 但**实际没传**
+- `_send_path_degraded` flag 修法 100% 阻 silent drop
+
+### 12.5 跟 issue #25666 的关系 (pydantic segfault)
+
+PR [c0441cb-related #29021](https://github.com/NousResearch/hermes-agent/issues/29021) (commit `57a61057f`) 修 pydantic-core 2.41.5 segfault:
+- 旧版: pydantic 2.12.5 + pydantic-core 2.41.5 → daemon thread + OpenAI Responses API 段 SIGSEGV
+- 新版: pydantic **2.13.4** + pydantic-core **2.46.4** → 0 segfault
+- 本机 venv 已 fix: `pydantic==2.13.4`, `pydantic-core==2.46.4` (per `~/.hermes/hermes-agent/pyproject.toml:55`)
