@@ -13,13 +13,15 @@ keywords:
   - image to prompt
   - 构图方案
   - 英文 prompt
-version: "1.0.0"
+version: "1.1.0"
 ---
 
 # via54-prompt-generation SKILL
 
 > 通过 via54Design 工具,为飞书用户生成 AI 绘图/视频的提示词。
-> 14 平台 + 26 维度 + 4 叙事模型 = via54Design 全能力。
+> 15 平台 (含 minimax) + 26 维度 + 4 叙事模型 = via54Design 全能力。
+
+> **v1.1.0 (2026-06-16 升级)**: 平台字数限制表真值校准 (查 OpenAI/Stability/Black Forest Labs/火山引擎 官方源), 新增 minimax 平台, 加入 `references/platform-char-limits-research.md` (查证方法论 + 真值表源链).
 
 ---
 
@@ -40,10 +42,12 @@ version: "1.0.0"
 
 | 工具 | 路径 | 用途 |
 |------|------|------|
-| `~/.local/bin/via54` | via54Design CLI v3.0 | 生成 3 段构图 + 完整英文 prompt |
-| `via54 prompt list` | 列出所有 14 平台 | midjourney / flux / dalle3 / sd3 / stable_diffusion / ideogram / recraft / seedance / gemini / veo / sora / kling / pika / jimeng |
+| `~/.local/bin/via54` | via54Design CLI v3.0 (15 平台) | 生成 3 段构图 + 完整英文 prompt |
+| `via54 prompt list` | 列出所有 15 平台 | midjourney / flux / dalle3 / sd3 / stable_diffusion / ideogram / recraft / seedance / gemini / veo / sora / kling / pika / jimeng / minimax + 3 video |
 | `via54 prompt generate --scene "..." --platform <plat>` | 渲染完整英文 prompt | 平台特定优化 (字数 / 关键词 / 风格) |
 | `tools/vision_tools.vision_analyze_tool` | 图片 → 中文描述 | minimax-cn MiniMax-M3 |
+
+> **写"平台限制"前必读** `references/platform-char-limits-research.md` — 列了查证方法论 + 2026-06-16 真值表 (4 官方源 + 3 community 源).
 
 ---
 
@@ -100,12 +104,13 @@ version: "1.0.0"
      --scene "<3 段构图 + 用户修改意见>" \
      --platform <user-specified or "通用">
    ```
-2. **如果用户指定平台** (jimeng/midjourney/flux/gemini/sora 等),按平台优化:
-   - jimeng: ≤1500 字 + 中文友好
-   - midjourney: ≤4500 字 + `--style raw` + `--v 6`
-   - flux: ≤4000 字 + 自然语言
-   - gemini: ≤8000 字 + 详细描述
-   - sora: ≤4000 字 + 视频特定
+2. **如果用户指定平台** (jimeng/midjourney/flux/gemini/sora 等),按平台优化 (字数限制见下方 "平台特定优化" 表):
+   - jimeng: ≤**800 字** (建议 400, 火山引擎官方)
+   - midjourney: ≤3500 字, `--v 6.1 --style raw --s 250`
+   - flux: ≤2000 字 (512 token, Black Forest Labs)
+   - gemini: ≤1500 字 (Imagen 480 token)
+   - dalle3: ≤4000 字 (OpenAI 硬限)
+   - stable_diffusion: ≤380 字 (77 token CLIP)
 3. **如果用户没指定**,用"通用"模式生成细节拉满的英文 prompt:
    ```
    A cinematic split-screen photograph of two young Asian women...
@@ -113,7 +118,7 @@ version: "1.0.0"
    ```
 4. bot 把英文 prompt 包装成**中文提示** + **英文 prompt 块**:
    ```
-   ✅ 完整英文 prompt 已生成 (jimeng 平台 / 1500 字):
+   ✅ 完整英文 prompt 已生成 (jimeng 平台 / 800 字):
    
    ```
    [英文 prompt 块,用户可直接复制到 jimeng 网页/APP]
@@ -169,19 +174,19 @@ version: "1.0.0"
    ### 主体
    - 主体 (Subject): 左右两位年轻亚洲女性
    - 辅助 (Secondary): 中间"湿疹主题"标题
-   
+
    ### 风格
    - 风格流派: 摄影写实
    - 媒介: digital photography
    - 色调: 蓝色调 (按你之前要求)
-   
+
    ### 构图
    - 镜头: medium shot
    - 构图: rule of thirds
-   
+
    ### 光线
    - 光线: cinematic lighting
-   
+
    ### 色彩
    - 色调: cool blue grading
    ```
@@ -216,27 +221,36 @@ version: "1.0.0"
 ---
 
 ## 平台特定优化 (真值 2026-06-16 查)
+## 平台特定优化 (真值 2026-04/05/06 调研)
 
-> 来源: 各平台官方文档 + via54Design YAML 模板 + Hugging Face 模型卡
+> 调研日期: 2026-06-16
+> 来源: 各平台官方文档 + Hugging Face 模型卡 + via54Design YAML + 实证博客
 
-| 平台 | 字数限制 (真值) | 关键参数 | 官方来源 |
-|------|-----------------|----------|---------|
-| **midjourney** | 3500-4500 字 (保守 3500) | `--v 6.1 --style raw --s 250` | v6.x 官方 |
-| **flux** | **512 tokens ≈ 2000 字** | 自然语言格式 | Black Forest Labs |
-| **dalle3** | **4000 字** (硬限) | 自然语言 | OpenAI 官方 |
-| **stable_diffusion** | **77 tokens ≈ 380 字** (CLIP 硬截断) | 短 keyword | Stability AI |
+| 平台 | 字数限制 (真值 2026) | 关键参数 | 官方来源 (2026 调研) |
+|------|---------------------|----------|---------------------|
+| **midjourney** | 3500-4500 字 (V8.1 默认) | `--v 8.1 --style raw --s 250` | V8.1 (2026-06-11 默认, blakecrosley.com 2026-06-10); V7 (2026-04-03 发布) |
+| **flux** | **2500 字** (FLUX.2 Pro v1.1, Elo 1265) | 自然语言格式 | Black Forest Labs FLUX.2 (2026-02, laozhang.ai 实测 $0.055/image) |
+| **dalle3** | 4000 字 (OpenAI 官方) | 自然语言 | OpenAI 官方, 已 legacy (被 gpt-image-1.5 替代, Elo 1264) |
+| **gpt-image-1/1.5** | **32000 字** (OpenAI 2026 新) | 自然语言 | OpenAI dev docs 2026 |
+| **stable_diffusion** | **77 tokens ≈ 380 字** (CLIP 硬截断) | 短 keyword | sd-tokenizer.rocker.boo 实测, Stability AI |
 | **sd3** | 77 token CLIP + 512 token T5 | 短 keyword | Stability AI |
-| **gemini (Imagen)** | Imagen 480 token ≈ 1500 字 (Gemini 1.5 长上下文支持) | 详细描述 | Google AI |
-| **即梦 (jimeng)** | **≤800 字** (建议 400, 火山引擎官方) | 中文友好 | 字节跳动火山引擎 |
-| **seedance** | 字节跳动, 类似 jimeng ≤800 字 | 中文友好 | 字节跳动 |
-| **ideogram / recraft** | 无明确官方限制 (保守 1500 字) | 自然语言 | 无官方 |
-| **veo / kling / sora / pika** | 无明确硬限制 (保守 1500 字) | 视频特定 | 视频平台无明确公开限制 |
-| **minimax** | via54 新增 (保守 1500 字) | 自然语言 | via54 内部 |
+| **gemini (Imagen 4)** | Imagen 480 token ≈ 1500 字 (Gemini 1.5 长上下文支持) | 详细描述 | Google AI (laozhang.ai 2026-02: Imagen 4 Fast $0.02) |
+| **即梦 (jimeng_t2i_v40)** | **≤800 字符** (建议 400) | 中文友好 | 字节跳动火山引擎 2026-03-31 更新 |
+| **Seedance 2.0** | ≤800 字符 (字节跳动同源) | 中文友好 | 字节跳动 2026-02 发布 |
+| **ideogram 2.0** | 无明确官方限制 (1500 保守) | 自然语言 | Ideogram 2026 ($0.040/image, Elo 1218) |
+| **recraft** | 无明确官方限制 (1500 保守) | 自然语言 | 无明确公开文档 |
+| **Veo 3.1** | 2000 字 (推荐详细) | 视频特定 | Google Vertex AI 2026-Q1, 50 RPM, YingTu 2026-01 |
+| **Sora 2** | 2000 字 (推荐详细) | portrait 720x1280 / landscape 1280x720, $0.10/秒 | OpenAI dev 2025-12-08 发布 (sora-2 default) |
+| **可灵 3.0** | 2000 字 (视频) | 多模态一体化 | 快手 2026-01-31 全球上线, 百度百科 2026-06 |
+| **pika** | 1500 字 (保守) | 视频特定 | Pika Labs, 无明确字数限制 |
+| **minimax** | 1500 字 (保守) | 自然语言 | via54 新增 (无官方限制) |
 | **通用 (默认)** | 不限 (via54 不截断) | 全场景详细 | via54Design |
 
 **bot 默认行为**:
 1. 第一次: **不指定平台**,生成"通用"细节拉满版
 2. 用户说"平台: <X>" → 重新生成平台特定优化版
+
+> **诚实说 (v1.1.0)**: 之前 v1.0 列的字数 (jimeng 1500, flux 4000, gemini 8000) **全部错了**, 查官方文档后更正. 真值表查证方法论见 `references/platform-char-limits-research.md`. **任何"平台限制"先查官方源, 不引 memory**.
 
 ---
 
@@ -280,7 +294,7 @@ bot 必须记住:
 | 用户发图但没文字 | bot 反问"请补文字需求" |
 | vision 描述失败 | bot 用"通用版"提示词 (描述部分空着) |
 | via54 CLI 失败 | bot 重试一次,失败返"via54 工具异常,请稍后再试" |
-| 用户指定不存在的平台 | bot 列出 14 平台让用户选 |
+| 用户指定不存在的平台 | bot 列出 15 平台让用户选 |
 | 用户消息超长 | bot 截断到 4000 字 |
 | 多轮修改累计修改超 5 次 | bot 提示"建议先确认当前方案,再批量应用修改" |
 
@@ -474,6 +488,7 @@ auxiliary:
 2. **多 agent 加速是错觉** — 我之前 5 个 subagent 并行干, 第一个 completed 没输出报告就退, 真治本单线程更稳。
 3. **5 大能力不一定要全用** — Channel SDK 默认值在大多数场景够用, 仅当用户明确要求才覆盖 (如 outbound text_chunk_limit)。
 4. **bot "失忆" 真因不是 v2 webhook 没 parent_id** — 是 Channel SDK 自动 normalize 到 `inbound.reply_to_message_id`, 之前 m12 bot 没读这字段。
+5. **(v1.1.0 新) 写"平台限制"先查官方文档** — 之前 v1.0 列的 jimeng 1500 / flux 4000 / gemini 8000 全部错, 查 OpenAI/Stability/Black Forest Labs/火山引擎 官方文档后更正. 详见 `references/platform-char-limits-research.md`.
 
 ---
 
@@ -483,6 +498,7 @@ auxiliary:
 - `references/tunnel-selection.md` — 飞书 bot 公网隧道选型 (ngrok vs cloudflared vs Tailscale) + 完整 launchd plist 模板
 - `references/feishu-channel-sdk-guide.md` — Channel SDK 5 大能力完整集成 (Policy/Safety/Inbound/Outbound 真参数 + 真坑 + 签名算法)
 - `references/vision-to-english.md` — vision 中文描述 → via54 英文 prompt 转换
+- **`references/platform-char-limits-research.md` (v1.1.0 新) — 平台字数限制真值的查证方法论 + 14 平台 2026-06-16 校准的真值表 (OpenAI/Stability/Black Forest Labs/火山引擎 官方源) — 写任何"平台限制"前必读**
 
 ### Templates (复制修改即可用)
 - `templates/feishu_channel_bot_template.py` — 完整 Channel SDK bot 模板 (5 大能力 + aiohttp + 真集成方式)
@@ -500,3 +516,5 @@ auxiliary:
 | via54Larkbotgo | `docs/feishu-bot-integration.md` (更新) + GO SDK 用 channel.bot.on_message |
 | via54Skills | `skills/via54-prompt-generation/SKILL.md` (新增,本文件副本) |
 | via54Hermes | `~/.hermes/skills/via54-prompt-generation/SKILL.md` (本文件副本) + SOUL.md 加引用 |
+
+> **v1.1.0 维护提示**: 写"平台限制"前必读 `references/platform-char-limits-research.md`. 真值从官方源查 (OpenAI / Stability / Black Forest Labs / 火山引擎 / HuggingFace), 不要从 memory 引. 每次发现新限制 / 新平台 / 新错误时, 更新 SKILL.md 表 + 同时同步 5 仓库增量 commit.
