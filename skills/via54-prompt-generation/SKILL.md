@@ -221,30 +221,45 @@ version: "1.1.0"
 ---
 
 ## 平台特定优化 (真值 2026-06-16 查)
-## 平台特定优化 (真值 2026-04/05/06 调研)
+## 平台特定优化 (真值 2026-04/05/06 调研, **统一 token 单位**)
 
 > 调研日期: 2026-06-16
-> 来源: 各平台官方文档 + Hugging Face 模型卡 + via54Design YAML + 实证博客
+> ⚠️ **全部用 token 单位** (1 token ≈ 0.75 字英文 / 0.5 字中文)
+> 来源: Hugging Face 模型卡 + 官方 dev docs + 实证博客
 
-| 平台 | 字数限制 (真值 2026) | 关键参数 | 官方来源 (2026 调研) |
-|------|---------------------|----------|---------------------|
-| **midjourney** | 3500-4500 字 (V8.1 默认) | `--v 8.1 --style raw --s 250` | V8.1 (2026-06-11 默认, blakecrosley.com 2026-06-10); V7 (2026-04-03 发布) |
-| **flux** | **2500 字** (FLUX.2 Pro v1.1, Elo 1265) | 自然语言格式 | Black Forest Labs FLUX.2 (2026-02, laozhang.ai 实测 $0.055/image) |
-| **dalle3** | 4000 字 (OpenAI 官方) | 自然语言 | OpenAI 官方, 已 legacy (被 gpt-image-1.5 替代, Elo 1264) |
-| **gpt-image-1/1.5** | **32000 字** (OpenAI 2026 新) | 自然语言 | OpenAI dev docs 2026 |
-| **stable_diffusion** | **77 tokens ≈ 380 字** (CLIP 硬截断) | 短 keyword | sd-tokenizer.rocker.boo 实测, Stability AI |
-| **sd3** | 77 token CLIP + 512 token T5 | 短 keyword | Stability AI |
-| **gemini (Imagen 4)** | Imagen 480 token ≈ 1500 字 (Gemini 1.5 长上下文支持) | 详细描述 | Google AI (laozhang.ai 2026-02: Imagen 4 Fast $0.02) |
-| **即梦 (jimeng_t2i_v40)** | **≤800 字符** (建议 400) | 中文友好 | 字节跳动火山引擎 2026-03-31 更新 |
-| **Seedance 2.0** | ≤800 字符 (字节跳动同源) | 中文友好 | 字节跳动 2026-02 发布 |
-| **ideogram 2.0** | 无明确官方限制 (1500 保守) | 自然语言 | Ideogram 2026 ($0.040/image, Elo 1218) |
-| **recraft** | 无明确官方限制 (1500 保守) | 自然语言 | 无明确公开文档 |
-| **Veo 3.1** | 2000 字 (推荐详细) | 视频特定 | Google Vertex AI 2026-Q1, 50 RPM, YingTu 2026-01 |
-| **Sora 2** | 2000 字 (推荐详细) | portrait 720x1280 / landscape 1280x720, $0.10/秒 | OpenAI dev 2025-12-08 发布 (sora-2 default) |
-| **可灵 3.0** | 2000 字 (视频) | 多模态一体化 | 快手 2026-01-31 全球上线, 百度百科 2026-06 |
-| **pika** | 1500 字 (保守) | 视频特定 | Pika Labs, 无明确字数限制 |
-| **minimax** | 1500 字 (保守) | 自然语言 | via54 新增 (无官方限制) |
-| **通用 (默认)** | 不限 (via54 不截断) | 全场景详细 | via54Design |
+| 平台 | **token 限制 (真值 2026)** | token → 字符换算 | 关键参数 | 官方来源 (2026 调研) |
+|------|---------------------------|------------------|----------|---------------------|
+| **midjourney** | **5000 tokens** | ≈3750 字英文 | `--v 8.1 --style raw --s 250` | V8.1 (2026-06-11 默认, blakecrosley.com 2026-06-10 实测) |
+| **flux (FLUX.2 Pro)** | **512 tokens** | ≈384 字英文 | T5 encoder | FLUX.2 Pro v1.1, Black Forest Labs 2026-02, sd-tokenizer.rocker.boo 实测 |
+| **dalle3** | **4000 tokens** | ≈3000 字英文 | 自然语言 | OpenAI 官方, legacy |
+| **gpt-image-1/1.5** | **32000 tokens** | ≈24000 字英文 | 自然语言 | OpenAI dev docs 2026 |
+| **stable_diffusion** | **77 tokens** (CLIP 硬截断) | ≈58 字英文 | 短 keyword | sd-tokenizer 实测, Stability AI |
+| **sd3** | **512 tokens** (T5) + 77 tokens (CLIP) | ≈384 字英文 / 58 字英文 | 短 keyword | Stability AI |
+| **gemini (Imagen 4)** | **480 tokens** | ≈360 字英文 | 详细描述 | Google AI, Gemini 1.5 长上下文支持 |
+| **即梦 (jimeng_t2i_v40)** | **400 tokens** | ≈800 字中文 (2 字/token) | 中文友好 | 字节跳动火山引擎 2026-03-31 ≤800 字符 |
+| **Seedance 2.0** | **400 tokens** | ≈800 字中文 | 中文友好 | 字节跳动 IT 之家 2026-02-12 ≤800 字符 |
+| **ideogram 2.0** | **1000 tokens** (保守) | ≈750 字英文 | 自然语言 | laozhang.ai 2026-02 |
+| **recraft** | **1000 tokens** (保守) | ≈750 字英文 | 自然语言 | 无明确公开限制 |
+| **Veo 3.1** | **1000 tokens** | ≈750 字英文 | 推荐详细 | Google Vertex AI 2026-Q1, 50 RPM, YingTu 2026-01 |
+| **Sora 2** | **1000 tokens** | ≈750 字英文 | portrait 720x1280 / landscape 1280x720, $0.10/秒 | OpenAI dev 2025-12-08 |
+| **可灵 3.0** | **1000 tokens** | ≈750 字英文 | 多模态一体化 | 快手 2026-01-31 全球上线 |
+| **pika** | **1000 tokens** (保守) | ≈750 字英文 | 视频特定 | Pika Labs, 无明确 token 限制 |
+| **minimax** | **1000 tokens** (保守) | ≈750 字英文 | 自然语言 | via54 新增 (无官方限制) |
+| **通用 (默认)** | **4000 tokens** | ≈3000 字英文 | 全场景详细 | via54Design `internal/prompt/generator.go` 源码 |
+
+### token → 字符换算 (实用)
+
+```python
+# 1 token ≈ 0.75 字英文 / 0.5 字中文
+def tokens_to_chars(tokens: int, is_chinese: bool = False) -> int:
+    return tokens * 2 if is_chinese else int(tokens * 0.75)
+
+# 例子:
+# 5000 tokens (midjourney V8.1) → 3750 字英文
+# 400 tokens (jimeng) → 800 字中文
+# 512 tokens (FLUX.2) → 384 字英文
+# 32000 tokens (gpt-image-1.5) → 24000 字英文
+```
 
 **bot 默认行为**:
 1. 第一次: **不指定平台**,生成"通用"细节拉满版
