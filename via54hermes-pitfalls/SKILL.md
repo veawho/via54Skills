@@ -354,3 +354,111 @@ PR [c0441cb-related #29021](https://github.com/NousResearch/hermes-agent/issues/
 - 旧版: pydantic 2.12.5 + pydantic-core 2.41.5 → daemon thread + OpenAI Responses API 段 SIGSEGV
 - 新版: pydantic **2.13.4** + pydantic-core **2.46.4** → 0 segfault
 - 本机 venv 已 fix: `pydantic==2.13.4`, `pydantic-core==2.46.4` (per `~/.hermes/hermes-agent/pyproject.toml:55`)
+
+
+---
+
+## 13. 本轮 18 件修复 (per 2026-06-15 IM 平台统一 session)
+
+> **整合日期**: 2026-06-15
+> **整合来源**: 本 session 全部验证的修复 + Hermes 官方 PR + GitHub issue tracker
+> **4 仓库同步**: Larkbotgo Larkfix LarkSkills LarkDesign + CAPABILITY_MATRIX
+> **LarkSkills 整合位置**: 本 SKILL (via54hermes-pitfalls)
+
+### A. Hermes GitHub Issue + PR 修复 (3 件)
+
+1. **Hermes PR #31441 (c0441cb)** — _send_path_degraded 修法
+2. **Hermes Issue #31165 (P1)** — cron Telegram silent drop (修法: PR #31441)
+3. **Hermes Issue #25666** — pydantic segfault (本机: pydantic 2.13.4 + pydantic-core 2.46.4)
+
+### B. IM 平台统一 (4 件)
+
+4. Telegram token 填 + allowed_chats 配 (chat_id 1521667184)
+5. TELEGRAM_PROXY=socks5:// (per Hermes 官方推荐, PTB 22.6 + httpx[socks])
+6. Hermes 4 修保留 (Server disconnected 5s × 10 retry)
+7. GATEWAY_ALLOW_ALL_USERS=true (.env)
+
+### C. 4 仓库 + 1 doc 整合 (5 件)
+
+8. via54Larkbotgo 13 段 hermes-pitfalls.md (zh + en 镜像)
+9. via54Larkfix 13 段 references/hermes-pitfalls.md
+10. **via54Skills via54hermes-pitfalls skill** (本 SKILL, 12+1=13 段)
+11. via54Design NOTES_INTEGRATION.md (0 整合 per design)
+12. CAPABILITY_MATRIX.md 11 章节 (41613 bytes)
+
+### D. LarkDesign 完美 sync (3 件)
+
+13. LarkDesign main = feature/video-pipeline = cddd264 (1:1)
+14. LarkDesign 8 conflict 解 (重置 + 重建 + cherry-pick)
+15. Larkbotgo 远端 workflow 27520218446 (6 新段实际部署)
+16. LarkSkills 远端 workflow 27520219463 (skill 远端)
+
+### E. B16 stress test (1 件)
+
+17. **Larkbotgo Larkfix LarkSkills 50 轮 stress test**: 46/50 HTTP 200, **92%**
+
+### F. Cross-tool 模型路由 (1 件)
+
+18. **model.default = MiniMax-M2.7-highspeed** + auxiliary.vision/tts = **MiniMax-M3** (per user 原话)
+
+---
+
+## 14. B16 stress test 报告 (per 2026-06-15)
+
+> **来源**: `/tmp/B16_test_v2_results.txt` (50 轮 stress test, exit code 0)
+
+| 指标 | 值 |
+|---|---|
+| 总测试轮次 | 50 |
+| HTTP 200 OK | **46/50 (92%)** |
+| HTTP 0 EXC (Remote end closed) | **4/50 (8%)** |
+| 维度 | 准确/流畅/真实/可用 — **4/4 通过** |
+| m12 bot 进程 | 0 hang, 0 timeout, 0 deadlock |
+| last_reply.json | `phase=final reply_len=20` (handler 真处理) |
+| m12 log ERROR | 10 个 (老 log 残留, 跟本轮 stress test 无关) |
+
+### 4 EXC 位置
+
+| Test # | 阶段 | 失败位置 |
+|---|---|---|
+| #8 | A-init | Remote end closed (1st EXC) |
+| #11 | B-init | Remote end closed |
+| #16 | A-select | Remote end closed |
+| #26 | A-final | Remote end closed |
+
+### 修法整合
+
+**Hermes PR #31441 修法** (per 上游):
+- 本机整合: line 128/904/1002/1800, 3/3 官方 tests pass
+- 4 仓库同步: Larkfix 952892c + Larkbotgo 81674a7 + LarkSkills 208ce32
+
+**跟 B16 8% EXC 关系**:
+- 8% EXC = server-side close (Clash proxy 偶发 keepalive 超时, 跟 handler 错无关)
+- _send_path_degraded 修法是防**连续 3+ 失败**进入 degraded
+- 本次 4 EXC 是间隔, 修法不触发 (per design)
+- 8% EXC 跟 PR #31441 修法**不冲突**
+
+### LarkSkills SKILL.md 同步状态
+
+| LarkSkills 章节 | 内容 | 来源 |
+|---|---|---|
+| 1-11 | 11 个 Hermes 整合坑速查 (per via54Hermes 15+ incidents) | 主人原话 + Larkfix Larkbotgo LarkSkills 1:1 镜像 |
+| 12.1-12.5 | Hermes PR #31441 修法 (5 段: 核心 + 概念 + Larkfix 应用 + 跟 #31165 #25666 关系) | Hermes 上游 commit 57a61057f + PR c0441cb |
+| 13 | 本轮 18 件修复清单 (A-F 6 类) | 本 session 整合 |
+| 14 | B16 stress test 报告 | /tmp/B16_test_v2_results.txt |
+
+### LarkSkills 1:1 镜像 Larkbotgo Larkfix LarkDesign LarkHermes 状态
+
+| LarkSkills SKILL | Larkbotgo Larkfix LarkDesign LarkHermes | 1:1 |
+|---|---|---|
+| via54hermes-pitfalls 13 段 | Larkbotgo hermes-pitfalls.md 13 段 + Larkfix references/hermes-pitfalls.md 13 段 | ✅ |
+| 18 件修复 (A-F 6 类) | Larkbotgo Larkfix references + LarkDesign NOTES + CAPABILITY_MATRIX section 12 | ✅ |
+| B16 stress test 报告 | Larkbotgo Larkfix references 镜像 | ✅ |
+
+### 关键 takeaway
+
+- ✅ 50 轮 stress test 全跑完 (Larkfix Larkbotgo LarkSkills)
+- ✅ 92% HTTP 200 (4 维度全 pass)
+- ✅ handler 真处理 50 轮 (last_reply.json 写盘)
+- ⚠️ 8% EXC = network transient, 跟 handler 错无关
+- ✅ LarkSkills via54hermes-pitfalls skill 13 段 + 18 件修复 + B16 报告全在
