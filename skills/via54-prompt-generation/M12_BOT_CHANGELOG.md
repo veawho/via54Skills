@@ -54,6 +54,8 @@
 - **CHANGELOG 1fd06b0** (我自己) — 老实归纳 (错, 只归纳今天)
 
 ## ✅ 改对了 (没回滚, 真治本)
+| **3a18b59_P10_DEPTH (本次)** | P10 深度关联真治本 (用户反馈"没有深度关联父消息的父消息") - 之前 fetch_parent_message 只拉 1 层, 拉不到 grandparent. 现在 P10 加 depth=3 递归拉 parent_id 链 + _seen 防环 + 真拉 root_id 根消息 (与 parent_id 不同才拉, 避免重复). 真测 B74_P10 真事件, parent_text 真含 [根消息 (root)]: 帮我生成与参考图片 1:1 的提示词 (你 5/17 21:32 真发) + parent_id 5/17 21:46:31 中文拆解版, 深度关联真工作 ✅ |
+
 | **3a18b59_P9_HISTORY (本次)** | P9 主动注入历史上下文 (用户问"现在能主动注入历史上下文了么") - 加 load_chat_history (curl + Popen + select + per-chunk idle 5s + startup grace 60s, 不写死 timeout), 加 _send_message_via_api (POST im/v1/messages), 加 global_user_session.json 跨 chat_id 持久化. 真测 B72 真事件 user_text 真注入 104 字 (chat 最近 5 条) + 3 段构图真出 ✅ |
 
 | **3a18b59_PARENT_QUOTE (本次)** | 引用父消息真显示 (用户反馈"究竟看到了引用回复的父信息没, 没有看到怎么解决") - 之前 parent_text 拉到但只在 log 显示, 用户看不到. 现在 outbound 真显示"你引用了之前的消息 (parent_id 12字) + parent_text 150字", 同时 user_req_with_vision 注入父消息让 LLM 真用上下文. 真测 B71V2 真处理 (recv + parent_id 真有 + parent_text 真拉 5/17 21:46:31 中文拆解版) ✅ |
