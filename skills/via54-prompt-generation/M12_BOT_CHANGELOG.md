@@ -53,7 +53,7 @@
 - **download_image 改 curl + Popen** (4bdcd0f) — 飞书图下载真治本
 - **CHANGELOG 1fd06b0** (我自己) — 老实归纳 (错, 只归纳今天)
 
-## ✅ 改对了 (没回滚, 真治本)| **c12a4d1 (本次)** | timeout 直接改 180s (用户硬要求) - 11 处全改: max_idle_seconds 30/90 → 180 (4 处), IDLE_CHUNK_SECONDS 5 → 180 (3 处), STARTUP_GRACE_SECONDS 60 → 180 (1 处), urllib 3 处 timeout=5 → 180, 真测 A 流程 reply_len=892 真返 3 段 ✅ || **fb1c2d3 (本次)** | 5 subagent 全力修 (LiteLLM stream_timeout 模式 + full-jitter 退避 2 attempts):
+## ✅ 改对了 (没回滚, 真治本)| **d8a1c33 (本次)** | compositions 阶段 elif 链真加 is_confirm_request 检测 (用户反馈'飞书会话,引用回复的父消息,没有生效' 真因 = confirm 走错位) - 之前: LLM 判"确认"是 modify, 走 modify 分支只返中文拆解版. 现在: elif 链先 detect is_confirm_request, 真走 confirm 流程, 返完整英文 (3051 字) + 中文拆解 (7 段) + 一行式适合复制. 真测 B56_3 mock "确认,完整提示词" reply phase=final len=4030 ✅ || **c12a4d1 (本次)** | timeout 直接改 180s (用户硬要求) - 11 处全改: max_idle_seconds 30/90 → 180 (4 处), IDLE_CHUNK_SECONDS 5 → 180 (3 处), STARTUP_GRACE_SECONDS 60 → 180 (1 处), urllib 3 处 timeout=5 → 180, 真测 A 流程 reply_len=892 真返 3 段 ✅ || **fb1c2d3 (本次)** | 5 subagent 全力修 (LiteLLM stream_timeout 模式 + full-jitter 退避 2 attempts):
   - call_via54 (subprocess.Popen + select + os.read per-chunk idle 5s + startup grace 60s + 2 attempts + full-jitter 0-3s)
   - call_via54_async (asyncio.create_subprocess_exec + read 4096 + wait_for 5s + 2 attempts + full-jitter)
   - _call_llm_sync (subprocess.Popen + select + os.read + PYTHONUNBUFFERED=1 + FileNotFoundError 优雅 + kill cleanup try/except + 提取 CACHE_TTL_SECONDS=300)
