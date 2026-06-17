@@ -54,6 +54,8 @@
 - **CHANGELOG 1fd06b0** (我自己) — 老实归纳 (错, 只归纳今天)
 
 ## ✅ 改对了 (没回滚, 真治本)
+| **3a18b59_P13_5_STAGES (本次)** | P13 5 阶段 outbound 真显示穿透链 (用户说"你到底修了个什么, 一层都没看到") - 之前 P12 改只在 B 流程 1 个 reply_text, 16 个没真改. 现在 P13 加 build_parent_quote() 公共函数 + 5 个 confirm 阶段 outbound 真改 (A 流程 compositions + final + confirm_2points + B 流程 + B 流程 confirm). 真测 B79_P13 ✅ |
+
 | **3a18b59_P12_OUTBOUND (本次)** | P12 outbound 真显示完整穿透链 (用户说"我希望直接穿透到最高层, 之前没修对") - 之前 P11 depth=99 内部拉了但 outbound 只显示 1 层. 现在 P12 outbound 真按 depth 编号显示所有层 (1层=你引用 + 2层=grandparent + ... + 最高层=根消息), 用户真能看到 thread 真最高层. 真测 B77_P12 ✅ |
 
 | **3a18b59_P11_DEPTH99 (本次)** | P11 直接穿透到最高层 (用户说"我希望直接穿透到最高层") - 之前 P10 depth=3 + root_id depth=1, 拉不到 4+ 层 thread. 现在 P11 depth=99 走完整个 thread (parent_id + root_id 都走 depth=99), _seen 防环, [父消息] 标记 + 显示 depth 方便调试. 真测 B75_P11 真事件, parent_id 5/17 23:10 中文拆解版真拉到, 穿透到 thread 最高层 ✅ |
