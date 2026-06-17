@@ -1,0 +1,17 @@
+# robots.txt — VitePress copies docs/public/* to dist/ root.
+#
+# Strategy: allow everything for normal crawlers, but slow down
+# aggressive scrapers that don't help SEO (semrush / ahrefs / etc).
+# The sitemap is declared so crawlers discover all pages.
+
+User-agent: *
+Allow: /
+Disallow: /assets/
+
+# Crawl-delay: 1 second between requests is polite without being
+# punishing. Bing/Yandex/etc. honor this; Google ignores it.
+Crawl-delay: 1
+
+# Sitemap — discoverable at well-known path. GitHub Pages serves it
+# at the URL below.
+Sitemap: https://veawho.github.io/via54Skills/sitemap.xml
