@@ -54,6 +54,8 @@
 - **CHANGELOG 1fd06b0** (我自己) — 老实归纳 (错, 只归纳今天)
 
 ## ✅ 改对了 (没回滚, 真治本)
+| **3a18b59_P9_HISTORY (本次)** | P9 主动注入历史上下文 (用户问"现在能主动注入历史上下文了么") - 加 load_chat_history (curl + Popen + select + per-chunk idle 5s + startup grace 60s, 不写死 timeout), 加 _send_message_via_api (POST im/v1/messages), 加 global_user_session.json 跨 chat_id 持久化. 真测 B72 真事件 user_text 真注入 104 字 (chat 最近 5 条) + 3 段构图真出 ✅ |
+
 | **3a18b59_PARENT_QUOTE (本次)** | 引用父消息真显示 (用户反馈"究竟看到了引用回复的父信息没, 没有看到怎么解决") - 之前 parent_text 拉到但只在 log 显示, 用户看不到. 现在 outbound 真显示"你引用了之前的消息 (parent_id 12字) + parent_text 150字", 同时 user_req_with_vision 注入父消息让 LLM 真用上下文. 真测 B71V2 真处理 (recv + parent_id 真有 + parent_text 真拉 5/17 21:46:31 中文拆解版) ✅ |
 
 | **3a18b59_UNBOUND (本次)** | 真修 UnboundLocalError 真治本 (用户说"没有回复, 你过了个啥") - 之前 m12_full_channel_bot.py L1029 print 引用 parent_id, 但 parent_id 在 print 之后才定义, m12 bot 5/18 0:00+ 每次 on_message 都崩 UnboundLocalError, 从来不真回复用户! 现在 parent_id / root_id / parent_text 真在 print 之前定义, m12 bot 真处理 B68_FIX_1 (recv + reply phase=init len=825 真出 3 段构图: 方案 1 萌心聚焦 + 方案 2 水彩双子喵 + 方案 3 暖意层递) ✅ |
