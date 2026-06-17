@@ -10,16 +10,54 @@
 *.swp
 *.swo
 
-# Build artifacts (in case you compile inside a skill folder)
+# Editors (jetbrains etc)
+*~
+*.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Python venv
+venv/
+.venv/
+env/
+.env.local
+.env.*.local
+
+# Output / reports (regenerable)
+reports/
+output.html
+*.log
+
+# Cached media (re-fetchable, see _scripts/{stock,subtitles}/*.mp4)
+_scripts/stock/
+_scripts/subtitles/
+*.mp4
+*.mp3
+*.wav
+
+# One-off artifacts
+DEPLOY_REPORT_*.md
+
+# Sensitive (lark-cli creds are root-only, never to be committed)
+*.enc
+master.key.file
+credentials.json
+secrets.yaml
+
+# Build artifacts
 bin/
-*.exe
 *.test
 *.out
-
-# Sensitive / local
-.env
-*.local
-# VitePress (do NOT commit — GitHub Actions will npm install)
-node_modules/
-docs/.vitepress/cache/
-docs/.vitepress/dist/
+*.exe
+backups/
