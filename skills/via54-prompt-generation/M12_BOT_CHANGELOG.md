@@ -54,6 +54,8 @@
 - **CHANGELOG 1fd06b0** (我自己) — 老实归纳 (错, 只归纳今天)
 
 ## ✅ 改对了 (没回滚, 真治本)
+| **3a18b59_P15_LLM_ONLY (本次)** | P15 全部基于 LLM 语义匹配真治本 (用户硬要求"飞书 bot 所有响应全部基于语义匹配, 必须, 而且需要你实际搞定") - 之前 m12 bot 还有 keyword 兜底 (is_reset/is_select_1/2/3/is_confirm/is_platform_change/is_confirm_request, L1482-1487 + L1713 + L1746 + L1856 等 6+ 处), 现在 keyword 全部移除, 100% LLM 语义激活. classify_intent_with_llm 真支持 7 个 intent (init/select_1/2/3/modify/platform/confirm/reset/unknown) ✅ |
+
 | **3a18b59_P13_5_STAGES (本次)** | P13 5 阶段 outbound 真显示穿透链 (用户说"你到底修了个什么, 一层都没看到") - 之前 P12 改只在 B 流程 1 个 reply_text, 16 个没真改. 现在 P13 加 build_parent_quote() 公共函数 + 5 个 confirm 阶段 outbound 真改 (A 流程 compositions + final + confirm_2points + B 流程 + B 流程 confirm). 真测 B79_P13 ✅ |
 
 | **3a18b59_P12_OUTBOUND (本次)** | P12 outbound 真显示完整穿透链 (用户说"我希望直接穿透到最高层, 之前没修对") - 之前 P11 depth=99 内部拉了但 outbound 只显示 1 层. 现在 P12 outbound 真按 depth 编号显示所有层 (1层=你引用 + 2层=grandparent + ... + 最高层=根消息), 用户真能看到 thread 真最高层. 真测 B77_P12 ✅ |
