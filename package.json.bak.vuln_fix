@@ -1,0 +1,27 @@
+{
+  "name": "via54skills",
+  "version": "1.0.0",
+  "description": "Personal Skills by veawho for Hermes / Claude / OpenClaw / OpenCode / Codex",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/veawho/via54Skills.git"
+  },
+  "keywords": [],
+  "author": "veawho",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/veawho/via54Skills/issues"
+  },
+  "homepage": "https://github.com/veawho/via54Skills#readme",
+  "devDependencies": {
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-rss": "^0.4.4",
+    "vitepress-sidebar": "^1.36.1"
+  }
+}
