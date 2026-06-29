@@ -1,5 +1,9 @@
 # via54Skills
 
+
+> **🌐 Language**: [🇨🇳 中文](./README.md) | [🇺🇸 English](#) (current)
+>
+> _This document is in English. For Chinese, click above._
 > Personal Hermes Agent / Claude / OpenClaw / OpenCode / Codex skills. Naming: via54<lowercase-action>. Bilingual.
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
