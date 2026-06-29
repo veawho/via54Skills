@@ -67,3 +67,13 @@ See [REFERENCES.md](REFERENCES.md) - all via54 repos + upstream projects.
 
 - Owner: [veawho (巫师叔叔)](https://github.com/veawho)
 - Issues: [GitHub Issues](https://github.com/veawho/via54Skills/issues)
+
+
+### `via54medit` — Multi-source Medical Literature Router for EBM (NEW)
+- 4 MCP tools (ask/search/list/persist_qa) for medical EBM literature
+- 5-layer architecture: entry / router / source / enrich / foundation
+- 4 concurrent sources: PubMed / OpenAlex / Semantic Scholar / 蚂蚁阿福 RAG
+- 3 enricher pipeline: FWCI (OpenAlex) / TLDR (S2) / MeSH (PubMed)
+- 6-class EBM question classification: Treatment / Diagnosis / Prognosis / Etiology / Prevention / Economic
+- AGPL-3.0 + MIT dual-license
+- See: [via54medit/SKILL.md](via54medit/SKILL.md)

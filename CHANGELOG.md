@@ -1,3 +1,13 @@
+
+## [0.4.0] - 2026-06-29
+
+### Added
+- **via54medit skill** — Multi-source medical literature router for EBM (extracted from via54Medit v4.5)
+- 4 MCP tools (ask/search/list/persist_qa)
+- 5-layer architecture + 6-class EBM classification + 3 enrichers
+- 22 个文件 (.md, .py, .yaml) 含 SKILL.md, README.md, example_usage.py
+- index.md / README.md 加 via54medit 介绍
+
 # Changelog
 
 

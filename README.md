@@ -451,3 +451,13 @@ via54Skills v0.3.0 兼容 [anthropics/skills](https://github.com/anthropics/skil
 - **kepano/obsidian-skills (38K)** - Obsidian skills (CLI + open formats)
 
 详见 [integrations/README.md](integrations/README.md) 和 [REFERENCES.md](REFERENCES.md).
+
+
+### `via54medit` — Multi-source Medical Literature Router for EBM (NEW)
+- 4 MCP tools (ask/search/list/persist_qa) for medical EBM literature
+- 5-layer architecture: entry / router / source / enrich / foundation
+- 4 concurrent sources: PubMed / OpenAlex / Semantic Scholar / 蚂蚁阿福 RAG
+- 3 enricher pipeline: FWCI (OpenAlex) / TLDR (S2) / MeSH (PubMed)
+- 6-class EBM question classification: Treatment / Diagnosis / Prognosis / Etiology / Prevention / Economic
+- AGPL-3.0 + MIT dual-license
+- See: [via54medit/SKILL.md](via54medit/SKILL.md)
