@@ -437,3 +437,13 @@ MIT (matches Hermes skill convention).
 - **[via54Skills](https://github.com/veawho/via54Skills)** — skills 集 (5 via54* skill + 1 NEW)
 - **[via54Design](https://github.com/veawho/via54Design)** — Go 设计引擎 (v0.5.0 / v0.6.0)
 - **[CAPABILITY_MATRIX](CAPABILITY_MATRIX.md)** — 跨仓库状态文档 (12 章节)
+
+
+## 🔗 集成 (v0.3.0 新增)
+
+via54Skills v0.3.0 兼容 [anthropics/skills](https://github.com/anthropics/skills) (156K) 官方格式, 同时跟踪 [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) (38K):
+
+- **anthropics/skills (156K)** - Anthropic Agent Skills 官方 SKILL.md 格式
+- **kepano/obsidian-skills (38K)** - Obsidian skills (CLI + open formats)
+
+详见 [integrations/README.md](integrations/README.md) 和 [REFERENCES.md](REFERENCES.md).

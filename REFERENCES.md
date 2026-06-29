@@ -33,6 +33,18 @@
 
 ---
 
+
+## Top 高星项目 (2026-06-29 audit, by stars)
+
+| Project | ★ Stars | 描述 | Link |
+|---------|---------|------|------|
+| anthropics/skills | 156,480 | Anthropic Agent Skills official | [GitHub](https://github.com/anthropics/skills) |
+| kepano/obsidian-skills | 38,809 | Agent skills for Obsidian | [GitHub](https://github.com/kepano/obsidian-skills) |
+
+_Inspired by these projects, see CHANGELOG for integration plans._
+
+---
+
 ## English
 
 This project is part of the via54 series. Explore the via54 ecosystem:
