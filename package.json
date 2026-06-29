@@ -28,6 +28,7 @@
   },
   "overrides": {
     "vite": "^7.0.0",
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "js-yaml": "^4.1.1"
   }
 }
